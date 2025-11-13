@@ -28,6 +28,7 @@ public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
                 .direccion(e.getDireccion())
                 .password(e.getPassword())
                 .rol(e.getRol())
+                .activo(e.getActivo())
                 .build();
     }
 
@@ -42,6 +43,7 @@ public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
                 .direccion(d.getDireccion())
                 .password(d.getPassword())
                 .rol(d.getRol())
+                .activo(d.getActivo())
                 .build();
     }
 

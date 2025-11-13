@@ -23,6 +23,7 @@ public class PagoUseCase {
                 .monto(pago.getMonto())
                 .estado("PENDIENTE") // por defecto
                 .fechaPago(LocalDateTime.now())
+                .metodo_pago(pago.getMetodo_pago())
                 .build();
 
         return repo.registrar(nuevo);
@@ -41,6 +42,7 @@ public class PagoUseCase {
                 .monto(pago.getMonto())
                 .fechaPago(pago.getFechaPago())
                 .estado(estado)
+                .metodo_pago(pago.getMetodo_pago())
                 .build();
 
         return repo.actualizar(pagoId, actualizado);

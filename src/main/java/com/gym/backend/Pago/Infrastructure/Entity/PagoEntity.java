@@ -27,4 +27,6 @@ public class PagoEntity {
     private String estado;
 
     private LocalDateTime fechaPago;
+
+    private String metodo_pago;
 }

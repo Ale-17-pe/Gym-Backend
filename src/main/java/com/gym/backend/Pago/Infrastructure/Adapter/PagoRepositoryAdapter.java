@@ -26,6 +26,7 @@ public class PagoRepositoryAdapter implements PagoRepositoryPort {
                 .monto(e.getMonto())
                 .estado(e.getEstado())
                 .fechaPago(e.getFechaPago())
+                .metodo_pago(e.getMetodo_pago())
                 .build();
     }
 
@@ -37,6 +38,7 @@ public class PagoRepositoryAdapter implements PagoRepositoryPort {
                 .monto(d.getMonto())
                 .estado(d.getEstado())
                 .fechaPago(d.getFechaPago())
+                .metodo_pago(d.getMetodo_pago())
                 .build();
     }
 

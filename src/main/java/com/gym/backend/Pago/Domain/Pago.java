@@ -17,4 +17,6 @@ public class Pago {
     private String estado; // PENDIENTE, CONFIRMADO, RECHAZADO
 
     private LocalDateTime fechaPago;
+
+    private String metodo_pago;
 }
