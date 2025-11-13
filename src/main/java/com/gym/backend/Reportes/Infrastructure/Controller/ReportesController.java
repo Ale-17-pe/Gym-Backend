@@ -1,7 +1,6 @@
 package com.gym.backend.Reportes.Infrastructure.Controller;
 
 import com.gym.backend.Reportes.Domain.*;
-import com.gym.backend.Reportes.Infrastructure.Adapter.ReportesRepositoryAdapter;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -10,29 +9,29 @@ import java.util.List;
 @RequestMapping("/api/reportes")
 public class ReportesController {
 
-    private final ReportesUseCase useCase;
+    private final ReportesServicePort service;
 
-    public ReportesController(ReportesRepositoryAdapter adapter) {
-        this.useCase = new ReportesUseCase(adapter);
+    public ReportesController(ReportesServicePort service) {
+        this.service = service;
     }
 
     @GetMapping("/ingresos-mensuales")
-    public List<IngresosMensuales> ingresosMensuales() {
-        return useCase.ingresosMensuales();
+    public List<IngresosMensuales> ingresos() {
+        return service.ingresosMensuales();
     }
 
     @GetMapping("/membresias-estado")
-    public List<MembresiasPorEstado> membresiasEstado() {
-        return useCase.membresiasPorEstado();
+    public List<MembresiasPorEstado> estado() {
+        return service.membresiasPorEstado();
     }
 
     @GetMapping("/asistencias-diarias")
-    public List<AsistenciasDiarias> asistenciasDiarias() {
-        return useCase.asistenciasDiarias();
+    public List<AsistenciasDiarias> asistencias() {
+        return service.asistenciasDiarias();
     }
 
     @GetMapping("/top-planes")
     public List<TopPlanes> topPlanes() {
-        return useCase.topPlanes();
+        return service.topPlanes();
     }
 }
