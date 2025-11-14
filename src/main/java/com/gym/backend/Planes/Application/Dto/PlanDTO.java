@@ -11,4 +11,5 @@ public class PlanDTO {
     private Double precio;
     private Integer duracionDias;
     private Boolean activo;
+    private String beneficios;
 }

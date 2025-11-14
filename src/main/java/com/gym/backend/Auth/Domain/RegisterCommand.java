@@ -6,5 +6,6 @@ public record RegisterCommand(String nombre,
                               String dni,
                               String telefono,
                               String direccion,
-                              String password) {
+                              String password,
+                              String rol) {
 }

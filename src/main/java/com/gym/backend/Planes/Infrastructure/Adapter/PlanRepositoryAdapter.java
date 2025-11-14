@@ -24,6 +24,7 @@ public class PlanRepositoryAdapter implements PlanRepositoryPort {
                 .descripcion(d.getDescripcion())
                 .precio(d.getPrecio())
                 .duracionDias(d.getDuracionDias())
+                .beneficios(d.getBeneficios())
                 .activo(d.getActivo())
                 .build();
     }
@@ -35,6 +36,7 @@ public class PlanRepositoryAdapter implements PlanRepositoryPort {
                 .descripcion(e.getDescripcion())
                 .precio(e.getPrecio())
                 .duracionDias(e.getDuracionDias())
+                .beneficios(e.getBeneficios())
                 .activo(e.getActivo())
                 .build();
     }
@@ -55,7 +57,7 @@ public class PlanRepositoryAdapter implements PlanRepositoryPort {
         entity.setPrecio(plan.getPrecio());
         entity.setDuracionDias(plan.getDuracionDias());
         entity.setActivo(plan.getActivo());
-
+        entity.setBeneficios(plan.getBeneficios());
         return toDomain(jpa.save(entity));
     }
 

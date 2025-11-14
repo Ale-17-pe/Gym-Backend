@@ -52,6 +52,16 @@ public class AuthServiceAdapter implements AuthServicePort {
         if (usuarioRepo.buscarPorDni(command.dni()) != null)
             throw new IllegalStateException("DNI ya registrado");
 
+        String rol = command.rol();
+        if (rol == null || rol.isBlank()) {
+            rol = "CLIENTE"; // por defecto
+        } else {
+            rol = rol.toUpperCase();
+            if (!rol.equals("ADMIN") && !rol.equals("RECEPCIONISTA") && !rol.equals("CLIENTE")) {
+                rol = "CLIENTE"; // si envían basura
+            }
+        }
+
         var usuario = usuarioRepo.guardar(
                 Usuario.builder()
                         .id(null)
@@ -62,7 +72,7 @@ public class AuthServiceAdapter implements AuthServicePort {
                         .telefono(command.telefono())
                         .direccion(command.direccion())
                         .password(passwordEncoder.encode(command.password()))
-                        .rol("CLIENTE")
+                        .rol(rol)
                         .build()
         );
 

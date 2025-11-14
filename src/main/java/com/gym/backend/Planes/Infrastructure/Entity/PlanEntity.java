@@ -26,4 +26,6 @@ public class PlanEntity {
     private Integer duracionDias;
 
     private Boolean activo;
+
+    private String beneficios;
 }

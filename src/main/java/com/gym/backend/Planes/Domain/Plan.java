@@ -15,4 +15,5 @@ public class Plan {
     private Double precio;
     private Integer duracionDias;  // duración en días
     private Boolean activo;
+    private String beneficios;
 }

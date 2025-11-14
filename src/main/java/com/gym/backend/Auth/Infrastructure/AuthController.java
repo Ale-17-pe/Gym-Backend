@@ -1,10 +1,9 @@
-package com.gym.backend.Shared.Infrastructure;
+package com.gym.backend.Auth.Infrastructure;
 
 import com.gym.backend.Auth.Domain.AuthResponse;
 import com.gym.backend.Auth.Domain.AuthUseCase;
 import com.gym.backend.Auth.Domain.LoginCommand;
 import com.gym.backend.Auth.Domain.RegisterCommand;
-import com.gym.backend.Auth.Infrastructure.AuthServiceAdapter;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
