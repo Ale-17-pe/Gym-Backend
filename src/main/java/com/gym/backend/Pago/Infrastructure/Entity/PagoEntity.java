@@ -1,32 +1,45 @@
 package com.gym.backend.Pago.Infrastructure.Entity;
 
+import com.gym.backend.Pago.Domain.Enum.EstadoPago;
+import com.gym.backend.Pago.Domain.Enum.MetodoPago;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
 
+
 @Entity
 @Table(name = "pagos")
 @Getter
 @Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
 public class PagoEntity {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long usuarioId;
+    @Column(nullable = false) private Long usuarioId;
+    @Column(nullable = false) private Long planId;
+    @Column(nullable = false) private Double monto;
 
-    private Long membresiaId;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20) private EstadoPago estado;
 
-    private Double monto;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30) private MetodoPago metodoPago;
 
-    private String estado;
-
+    @Column(length = 100) private String referencia;
+    @Column(nullable = false) private LocalDateTime fechaCreacion;
     private LocalDateTime fechaPago;
+    @Column(nullable = false) private LocalDateTime fechaActualizacion;
 
-    private String metodo_pago;
+    @PrePersist protected void onCreate() {
+        fechaCreacion = LocalDateTime.now();
+        fechaActualizacion = LocalDateTime.now();
+    }
+    @PreUpdate protected void onUpdate() {
+        fechaActualizacion = LocalDateTime.now();
+    }
 }

@@ -4,7 +4,6 @@ import lombok.Data;
 
 @Data
 public class PlanDTO {
-
     private Long id;
     private String nombrePlan;
     private String descripcion;

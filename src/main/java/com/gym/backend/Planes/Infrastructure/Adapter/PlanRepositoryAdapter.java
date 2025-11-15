@@ -4,79 +4,90 @@ import com.gym.backend.Planes.Domain.Plan;
 import com.gym.backend.Planes.Domain.PlanRepositoryPort;
 import com.gym.backend.Planes.Infrastructure.Entity.PlanEntity;
 import com.gym.backend.Planes.Infrastructure.Jpa.PlanJpaRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Optional;
 
 @Component
+@RequiredArgsConstructor
 public class PlanRepositoryAdapter implements PlanRepositoryPort {
 
     private final PlanJpaRepository jpa;
 
-    public PlanRepositoryAdapter(PlanJpaRepository jpa) {
-        this.jpa = jpa;
-    }
-
-    private PlanEntity toEntity(Plan d) {
-        return PlanEntity.builder()
-                .id(d.getId())
-                .nombrePlan(d.getNombrePlan())
-                .descripcion(d.getDescripcion())
-                .precio(d.getPrecio())
-                .duracionDias(d.getDuracionDias())
-                .beneficios(d.getBeneficios())
-                .activo(d.getActivo())
-                .build();
-    }
-
-    private Plan toDomain(PlanEntity e) {
-        return Plan.builder()
-                .id(e.getId())
-                .nombrePlan(e.getNombrePlan())
-                .descripcion(e.getDescripcion())
-                .precio(e.getPrecio())
-                .duracionDias(e.getDuracionDias())
-                .beneficios(e.getBeneficios())
-                .activo(e.getActivo())
-                .build();
-    }
-
     @Override
     public Plan guardar(Plan plan) {
-        var saved = jpa.save(toEntity(plan));
-        return toDomain(saved);
-    }
-
-    @Override
-    public Plan actualizar(Long id, Plan plan) {
-        var entity = jpa.findById(id)
-                .orElseThrow(() -> new IllegalStateException("Plan no encontrado"));
-
-        entity.setNombrePlan(plan.getNombrePlan());
-        entity.setDescripcion(plan.getDescripcion());
-        entity.setPrecio(plan.getPrecio());
-        entity.setDuracionDias(plan.getDuracionDias());
-        entity.setActivo(plan.getActivo());
-        entity.setBeneficios(plan.getBeneficios());
+        PlanEntity entity = toEntity(plan);
         return toDomain(jpa.save(entity));
     }
 
     @Override
-    public Plan obtenerPorId(Long id) {
-        return jpa.findById(id)
-                .map(this::toDomain)
-                .orElseThrow(() -> new IllegalStateException("Plan no existe"));
+    public Plan actualizar(Plan plan) {
+        PlanEntity existente = jpa.findById(plan.getId())
+                .orElseThrow(() -> new RuntimeException("Plan no encontrado para actualizar"));
+
+        existente.setNombrePlan(plan.getNombrePlan());
+        existente.setDescripcion(plan.getDescripcion());
+        existente.setPrecio(plan.getPrecio());
+        existente.setDuracionDias(plan.getDuracionDias());
+        existente.setActivo(plan.getActivo());
+        existente.setBeneficios(plan.getBeneficios());
+
+        return toDomain(jpa.save(existente));
+    }
+
+    @Override
+    public Optional<Plan> buscarPorId(Long id) {
+        return jpa.findById(id).map(this::toDomain);
+    }
+
+    @Override
+    public Optional<Plan> buscarPorNombre(String nombrePlan) {
+        return jpa.findByNombrePlan(nombrePlan).map(this::toDomain);
     }
 
     @Override
     public List<Plan> listar() {
-        return jpa.findAll().stream()
-                .map(this::toDomain)
-                .toList();
+        return jpa.findAll().stream().map(this::toDomain).toList();
+    }
+
+    @Override
+    public List<Plan> listarActivos() {
+        return jpa.findByActivoTrue().stream().map(this::toDomain).toList();
+    }
+
+    @Override
+    public List<Plan> listarInactivos() {
+        return jpa.findByActivoFalse().stream().map(this::toDomain).toList();
     }
 
     @Override
     public void eliminar(Long id) {
         jpa.deleteById(id);
+    }
+
+    private Plan toDomain(PlanEntity entity) {
+        return Plan.builder()
+                .id(entity.getId())
+                .nombrePlan(entity.getNombrePlan())
+                .descripcion(entity.getDescripcion())
+                .precio(entity.getPrecio())
+                .duracionDias(entity.getDuracionDias())
+                .activo(entity.getActivo())
+                .beneficios(entity.getBeneficios())
+                .build();
+    }
+
+    private PlanEntity toEntity(Plan domain) {
+        return PlanEntity.builder()
+                .id(domain.getId())
+                .nombrePlan(domain.getNombrePlan())
+                .descripcion(domain.getDescripcion())
+                .precio(domain.getPrecio())
+                .duracionDias(domain.getDuracionDias())
+                .activo(domain.getActivo())
+                .beneficios(domain.getBeneficios())
+                .build();
     }
 }

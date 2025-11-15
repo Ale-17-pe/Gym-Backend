@@ -1,20 +1,16 @@
 package com.gym.backend.Membresias.Domain;
 
+import com.gym.backend.Membresias.Domain.Enum.EstadoMembresia;
+
 import java.util.List;
+import java.util.Optional;
 
 public interface MembresiaRepositoryPort {
-
-    Membresia crear(Membresia membresia);
-
-    Membresia actualizar(Long id, Membresia membresia);
-
-    Membresia obtenerPorId(Long id);
-
+    Membresia guardar(Membresia membresia);
+    Membresia actualizar(Membresia membresia);
+    Optional<Membresia> buscarPorId(Long id);
     List<Membresia> listar();
-
-    List<Membresia> buscarPorUsuario(Long usuarioId);
-
-    Membresia buscarActivaPorUsuario(Long usuarioId);
-
-    void eliminar(Long id);
+    List<Membresia> listarPorUsuario(Long usuarioId);
+    Optional<Membresia> buscarActivaPorUsuario(Long usuarioId);
+    List<Membresia> listarPorEstado(EstadoMembresia estado);
 }

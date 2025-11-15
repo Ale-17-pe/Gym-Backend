@@ -1,11 +1,15 @@
 package com.gym.backend.Auth.Domain;
 
-public record RegisterCommand(String nombre,
-                              String apellido,
-                              String email,
-                              String dni,
-                              String telefono,
-                              String direccion,
-                              String password,
-                              String rol) {
-}
+import jakarta.validation.constraints.NotBlank;
+
+public record RegisterCommand(
+        @NotBlank String nombre,
+        @NotBlank String apellido,
+        String genero,  // Agregado para coincidir con Usuarios
+        @NotBlank String email,
+        @NotBlank String dni,
+        String telefono,
+        String direccion,
+        @NotBlank String password,
+        String rol
+) {}

@@ -1,51 +1,22 @@
 package com.gym.backend.Usuarios.Infrastructure.Adapter;
 
+import com.gym.backend.Usuarios.Domain.Enum.Genero;
+import com.gym.backend.Usuarios.Domain.Enum.Rol;
 import com.gym.backend.Usuarios.Domain.Usuario;
 import com.gym.backend.Usuarios.Domain.UsuarioRepositoryPort;
 import com.gym.backend.Usuarios.Infrastructure.Entity.UsuarioEntity;
 import com.gym.backend.Usuarios.Infrastructure.Jpa.UsuarioJpaRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Optional;
 
 @Component
+@RequiredArgsConstructor
 public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
 
     private final UsuarioJpaRepository jpa;
-
-    public UsuarioRepositoryAdapter(UsuarioJpaRepository jpa) {
-        this.jpa = jpa;
-    }
-
-    private Usuario toDomain(UsuarioEntity e) {
-        return Usuario.builder()
-                .id(e.getId())
-                .nombre(e.getNombre())
-                .apellido(e.getApellido())
-                .email(e.getEmail())
-                .dni(e.getDni())
-                .telefono(e.getTelefono())
-                .direccion(e.getDireccion())
-                .password(e.getPassword())
-                .rol(e.getRol())
-                .activo(e.getActivo())
-                .build();
-    }
-
-    private UsuarioEntity toEntity(Usuario d) {
-        return UsuarioEntity.builder()
-                .id(d.getId())
-                .nombre(d.getNombre())
-                .apellido(d.getApellido())
-                .email(d.getEmail())
-                .dni(d.getDni())
-                .telefono(d.getTelefono())
-                .direccion(d.getDireccion())
-                .password(d.getPassword())
-                .rol(d.getRol())
-                .activo(d.getActivo())
-                .build();
-    }
 
     @Override
     public Usuario guardar(Usuario usuario) {
@@ -53,48 +24,92 @@ public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
     }
 
     @Override
-    public Usuario actualizar(Long id, Usuario usuario) {
-        UsuarioEntity e = jpa.findById(id)
-                .orElseThrow(() -> new IllegalStateException("Usuario no encontrado"));
+    public Usuario actualizar(Usuario usuario) {
+        UsuarioEntity existente = jpa.findById(usuario.getId())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado para actualizar"));
 
-        e.setNombre(usuario.getNombre());
-        e.setApellido(usuario.getApellido());
-        e.setTelefono(usuario.getTelefono());
-        e.setDireccion(usuario.getDireccion());
-        e.setRol(usuario.getRol());
+        existente.setNombre(usuario.getNombre());
+        existente.setApellido(usuario.getApellido());
+        existente.setGenero(usuario.getGenero());
+        existente.setTelefono(usuario.getTelefono());
+        existente.setDireccion(usuario.getDireccion());
+        existente.setRol(usuario.getRol());
+        existente.setActivo(usuario.getActivo());
 
-        return toDomain(jpa.save(e));
+        if (usuario.getPassword() != null && !usuario.getPassword().trim().isEmpty()) {
+            existente.setPassword(usuario.getPassword());
+        }
+
+        return toDomain(jpa.save(existente));
     }
 
     @Override
-    public Usuario buscarPorId(Long id) {
-        return toDomain(
-                jpa.findById(id)
-                        .orElseThrow(() -> new IllegalStateException("No existe el usuario"))
-        );
+    public Optional<Usuario> buscarPorId(Long id) {
+        return jpa.findById(id).map(this::toDomain);
     }
 
     @Override
-    public Usuario buscarPorEmail(String email) {
-        var e = jpa.findByEmail(email);
-        return e != null ? toDomain(e) : null;
+    public Optional<Usuario> buscarPorEmail(String email) {
+        return jpa.findByEmail(email).map(this::toDomain);
     }
 
     @Override
-    public Usuario buscarPorDni(String dni) {
-        var e = jpa.findByDni(dni);
-        return e != null ? toDomain(e) : null;
+    public Optional<Usuario> buscarPorDni(String dni) {
+        return jpa.findByDni(dni).map(this::toDomain);
     }
 
     @Override
     public List<Usuario> listar() {
-        return jpa.findAll().stream()
-                .map(this::toDomain)
-                .toList();
+        return jpa.findAll().stream().map(this::toDomain).toList();
     }
 
     @Override
-    public void eliminar(Long id) {
-        jpa.deleteById(id);
+    public List<Usuario> listarPorRol(Rol rol) {
+        return jpa.findByRol(rol).stream().map(this::toDomain).toList();
+    }
+
+    @Override
+    public List<Usuario> listarPorGenero(Genero genero) {
+        return jpa.findByGenero(genero).stream().map(this::toDomain).toList();
+    }
+
+    @Override
+    public List<Usuario> listarPorActivo(Boolean activo) {
+        return jpa.findByActivo(activo).stream().map(this::toDomain).toList();
+    }
+
+    @Override
+    public void eliminar(Long id) { jpa.deleteById(id); }
+
+    private Usuario toDomain(UsuarioEntity entity) {
+        return Usuario.builder()
+                .id(entity.getId())
+                .nombre(entity.getNombre())
+                .apellido(entity.getApellido())
+                .genero(entity.getGenero())
+                .email(entity.getEmail())
+                .dni(entity.getDni())
+                .telefono(entity.getTelefono())
+                .direccion(entity.getDireccion())
+                .password(entity.getPassword())
+                .rol(entity.getRol())
+                .activo(entity.getActivo())
+                .build();
+    }
+
+    private UsuarioEntity toEntity(Usuario domain) {
+        return UsuarioEntity.builder()
+                .id(domain.getId())
+                .nombre(domain.getNombre())
+                .apellido(domain.getApellido())
+                .genero(domain.getGenero())
+                .email(domain.getEmail())
+                .dni(domain.getDni())
+                .telefono(domain.getTelefono())
+                .direccion(domain.getDireccion())
+                .password(domain.getPassword())
+                .rol(domain.getRol())
+                .activo(domain.getActivo())
+                .build();
     }
 }

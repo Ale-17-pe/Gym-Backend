@@ -1,18 +1,16 @@
 package com.gym.backend.Pago.Domain;
 
+import com.gym.backend.Pago.Domain.Enum.EstadoPago;
+
 import java.util.List;
+import java.util.Optional;
 
 public interface PagoRepositoryPort {
-
-    Pago registrar(Pago pago);
-
-    Pago actualizar(Long id, Pago pago);
-
-    Pago obtenerPorId(Long id);
-
+    Pago guardar(Pago pago);
+    Pago actualizar(Pago pago);
+    Optional<Pago> buscarPorId(Long id);
     List<Pago> listar();
-
     List<Pago> listarPorUsuario(Long usuarioId);
-
-    List<Pago> listarPorMembresia(Long membresiaId);
+    List<Pago> listarPorEstado(EstadoPago estado);
+    List<Pago> listarPagosPendientes();
 }

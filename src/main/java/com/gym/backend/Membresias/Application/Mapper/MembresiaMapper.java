@@ -1,13 +1,23 @@
 package com.gym.backend.Membresias.Application.Mapper;
 
+import com.gym.backend.Membresias.Application.Dto.CrearMembresiaRequest;
 import com.gym.backend.Membresias.Application.Dto.MembresiaDTO;
+import com.gym.backend.Membresias.Application.Dto.MembresiaResponse;
 import com.gym.backend.Membresias.Domain.Membresia;
-import org.mapstruct.Mapper;
+import com.gym.backend.Membresias.Infrastructure.Entity.MembresiaEntity;
+import org.mapstruct.*;
 
 @Mapper(componentModel = "spring")
 public interface MembresiaMapper {
-
-    MembresiaDTO toDTO(Membresia membresia);
-
+    Membresia toDomain(MembresiaEntity entity);
+    MembresiaEntity toEntity(Membresia domain);
+    MembresiaDTO toDTO(Membresia domain);
     Membresia toDomain(MembresiaDTO dto);
+    Membresia toDomainFromRequest(CrearMembresiaRequest request);
+
+    @Mapping(target = "activa", expression = "java(membresia.estaActiva())")
+    @Mapping(target = "diasRestantes", expression = "java(membresia.diasRestantes())")
+    @Mapping(target = "nombrePlan", ignore = true)
+    @Mapping(target = "nombreUsuario", ignore = true)
+    MembresiaResponse toResponse(Membresia membresia);
 }

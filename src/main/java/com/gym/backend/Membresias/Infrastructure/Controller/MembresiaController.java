@@ -1,55 +1,39 @@
 package com.gym.backend.Membresias.Infrastructure.Controller;
 
 import com.gym.backend.Membresias.Application.Dto.MembresiaDTO;
+import com.gym.backend.Membresias.Application.Dto.MembresiaResponse;
 import com.gym.backend.Membresias.Application.Mapper.MembresiaMapper;
 import com.gym.backend.Membresias.Domain.Membresia;
 import com.gym.backend.Membresias.Domain.MembresiaUseCase;
 import com.gym.backend.Membresias.Infrastructure.Adapter.MembresiaRepositoryAdapter;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/membresias")
+@RequiredArgsConstructor
 public class MembresiaController {
-
     private final MembresiaUseCase useCase;
     private final MembresiaMapper mapper;
 
-    public MembresiaController(MembresiaRepositoryAdapter adapter, MembresiaMapper mapper) {
-        this.useCase = new MembresiaUseCase(adapter);
-        this.mapper = mapper;
-    }
-
-    @PostMapping("/crear/{duracion}")
-    public MembresiaDTO crear(
-            @PathVariable int duracion,
-            @RequestBody MembresiaDTO dto
-    ) {
-        Membresia membresia = mapper.toDomain(dto);
-        return mapper.toDTO(useCase.crear(membresia, duracion));
-    }
-
     @GetMapping
-    public List<MembresiaDTO> listar() {
-        return useCase.listar().stream()
-                .map(mapper::toDTO)
-                .toList();
+    public List<MembresiaResponse> listar() {
+        return useCase.listar().stream().map(mapper::toResponse).toList();
     }
 
-    @GetMapping("/usuario/{id}")
-    public List<MembresiaDTO> porUsuario(@PathVariable Long id) {
-        return useCase.porUsuario(id).stream().map(mapper::toDTO).toList();
+    @GetMapping("/usuario/{usuarioId}")
+    public List<MembresiaResponse> listarPorUsuario(@PathVariable Long usuarioId) {
+        return useCase.listarPorUsuario(usuarioId).stream().map(mapper::toResponse).toList();
     }
 
-    @GetMapping("/activa/{id}")
-    public MembresiaDTO activa(@PathVariable Long id) {
-        var m = useCase.activaPorUsuario(id);
-        return m == null ? null : mapper.toDTO(m);
-    }
-
-    @DeleteMapping("/{id}")
-    public void eliminar(@PathVariable Long id) {
-        useCase.eliminar(id);
+    @GetMapping("/activa/{usuarioId}")
+    public ResponseEntity<MembresiaResponse> obtenerActiva(@PathVariable Long usuarioId) {
+        var membresia = useCase.obtenerActivaPorUsuario(usuarioId);
+        return membresia != null ?
+                ResponseEntity.ok(mapper.toResponse(membresia)) :
+                ResponseEntity.notFound().build();
     }
 }

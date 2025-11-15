@@ -1,76 +1,82 @@
 package com.gym.backend.Shared.Security;
 
-import com.gym.backend.Usuarios.Infrastructure.Adapter.UsuarioRepositoryAdapter;
+import com.gym.backend.Usuarios.Domain.Exceptions.UsuarioNotFoundException;
+import com.gym.backend.Usuarios.Domain.UsuarioUseCase;
 import io.jsonwebtoken.ExpiredJwtException;
-
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 
 import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+@Slf4j
 @Component
-public class JwtAuthenticationFilter implements Filter {
+@RequiredArgsConstructor
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
-    private final UsuarioRepositoryAdapter usuarioRepo;
-
-    public JwtAuthenticationFilter(JwtService jwtService, UsuarioRepositoryAdapter usuarioRepo) {
-        this.jwtService = jwtService;
-        this.usuarioRepo = usuarioRepo;
-    }
+    private final UsuarioUseCase usuarioUseCase;
 
     @Override
-    public void doFilter(
-            ServletRequest request,
-            ServletResponse response,
-            FilterChain chain) throws IOException, ServletException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        final String authHeader = request.getHeader("Authorization");
 
-        HttpServletRequest http = (HttpServletRequest) request;
-
-        String header = http.getHeader("Authorization");
-
-        if (header == null || !header.startsWith("Bearer ")) {
-            chain.doFilter(request, response);
-            return;
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response); return;
         }
 
-        String token = header.substring(7);
+        final String token = authHeader.substring(7);
 
         try {
             String email = jwtService.extractEmail(token);
 
-            var usuario = usuarioRepo.buscarPorEmail(email);
-            if (usuario == null) {
-                chain.doFilter(request, response);
-                return;
+            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                try {
+                    var usuario = usuarioUseCase.obtenerPorEmail(email);
+
+                    if (jwtService.isTokenValid(token)) {
+                        if (!usuario.esActivo()) {
+                            log.warn("Usuario inactivo intentando acceder: {}", email);
+                            sendErrorResponse(response, "Usuario desactivado", HttpServletResponse.SC_FORBIDDEN);
+                            return;
+                        }
+
+                        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                                usuario, null, jwtService.getAuthorities(usuario.getRol().name()));
+                        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(authToken);
+                        log.debug("Usuario autenticado: {}", email);
+                    }
+                } catch (UsuarioNotFoundException e) {
+                    log.warn("Usuario no encontrado en JWT filter: {}", email);
+                }
             }
-
-            UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(
-                            usuario,
-                            null,
-                            jwtService.getAuthorities(usuario.getRol())
-                    );
-
-            auth.setDetails(
-                    new WebAuthenticationDetailsSource().buildDetails(http)
-            );
-
-            SecurityContextHolder.getContext().setAuthentication(auth);
-
-        } catch (ExpiredJwtException ex) {
-            HttpServletResponse res = (HttpServletResponse) response;
-            res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            return;
+        } catch (ExpiredJwtException e) {
+            log.warn("Token expirado para usuario: {}", e.getClaims().getSubject());
+            sendErrorResponse(response, "Token expirado", HttpServletResponse.SC_UNAUTHORIZED); return;
+        } catch (JwtException e) {
+            log.warn("Token JWT inválido: {}", e.getMessage());
+            sendErrorResponse(response, "Token inválido", HttpServletResponse.SC_UNAUTHORIZED); return;
+        } catch (Exception e) {
+            log.error("Error en filtro JWT", e);
+            sendErrorResponse(response, "Error de autenticación", HttpServletResponse.SC_INTERNAL_SERVER_ERROR); return;
         }
 
-        chain.doFilter(request, response);
+        filterChain.doFilter(request, response);
+    }
+
+    private void sendErrorResponse(HttpServletResponse response, String message, int status) throws IOException {
+        response.setStatus(status);
+        response.setContentType("application/json");
+        response.getWriter().write("{\"error\": \"" + message + "\"}");
     }
 }

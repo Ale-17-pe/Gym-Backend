@@ -1,5 +1,6 @@
 package com.gym.backend.PaymentCode.Infrastructure.Entity;
 
+import com.gym.backend.PaymentCode.Domain.Enums.EstadoPaymentCode;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -9,21 +10,24 @@ import java.time.LocalDateTime;
 @Table(name = "payment_codes")
 @Getter
 @Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
 public class PaymentCodeEntity {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long pagoId;
+    @Column(nullable = false) private Long pagoId;
+    @Column(nullable = false, unique = true, length = 50) private String codigo;
+    @Column(nullable = false) private LocalDateTime fechaGeneracion;
+    @Column(nullable = false) private LocalDateTime fechaExpiracion;
 
-    private String codigo;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20) private EstadoPaymentCode estado;
 
-    private LocalDateTime fechaGeneracion;
-    private LocalDateTime fechaExpiracion;
-
-    private String estado;
+    @PrePersist protected void onCreate() {
+        if (fechaGeneracion == null) fechaGeneracion = LocalDateTime.now();
+        if (estado == null) estado = EstadoPaymentCode.GENERADO;
+    }
 }

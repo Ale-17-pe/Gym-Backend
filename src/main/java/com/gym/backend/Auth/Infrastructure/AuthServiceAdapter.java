@@ -5,79 +5,150 @@ import com.gym.backend.Auth.Domain.AuthServicePort;
 import com.gym.backend.Auth.Domain.LoginCommand;
 import com.gym.backend.Auth.Domain.RegisterCommand;
 import com.gym.backend.Shared.Security.JwtService;
+import com.gym.backend.Usuarios.Domain.Enum.Genero;
+import com.gym.backend.Usuarios.Domain.Enum.Rol;
+import com.gym.backend.Usuarios.Domain.Exceptions.UsuarioDuplicateException;
+import com.gym.backend.Usuarios.Domain.Exceptions.UsuarioInactiveException;
+import com.gym.backend.Usuarios.Domain.Exceptions.UsuarioNotFoundException;
+import com.gym.backend.Usuarios.Domain.Exceptions.UsuarioValidationException;
 import com.gym.backend.Usuarios.Domain.Usuario;
+import com.gym.backend.Usuarios.Domain.UsuarioUseCase;
 import com.gym.backend.Usuarios.Infrastructure.Adapter.UsuarioRepositoryAdapter;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class AuthServiceAdapter implements AuthServicePort {
 
-    private final UsuarioRepositoryAdapter usuarioRepo;
+    private final UsuarioUseCase usuarioUseCase;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
-    public AuthServiceAdapter(
-            UsuarioRepositoryAdapter usuarioRepo,
-            PasswordEncoder passwordEncoder,
-            JwtService jwtService
-    ) {
-        this.usuarioRepo = usuarioRepo;
-        this.passwordEncoder = passwordEncoder;
-        this.jwtService = jwtService;
-    }
-
     @Override
     public AuthResponse login(LoginCommand command) {
+        log.info("Intentando login con: {}", command.emailOrDni());
 
-        var usuario = usuarioRepo.buscarPorEmail(command.email());
+        Usuario usuario = buscarUsuarioPorEmailODni(command.emailOrDni());
 
-        if (usuario == null)
-            throw new IllegalStateException("Email o contraseña incorrectos");
+        if (usuario == null) {
+            log.warn("Login fallido - Usuario no encontrado: {}", command.emailOrDni());
+            throw new UsuarioNotFoundException("Credenciales inválidas");
+        }
 
-        if (!passwordEncoder.matches(command.password(), usuario.getPassword()))
-            throw new IllegalStateException("Email o contraseña incorrectos");
+        if (!usuario.esActivo()) {
+            log.warn("Login fallido - Usuario inactivo: {}", command.emailOrDni());
+            throw new UsuarioInactiveException(usuario.getId());
+        }
+
+        if (!passwordEncoder.matches(command.password(), usuario.getPassword())) {
+            log.warn("Login fallido - Contraseña incorrecta para: {}", command.emailOrDni());
+            throw new UsuarioValidationException("Credenciales inválidas");
+        }
 
         String token = jwtService.generateToken(usuario);
+        LocalDateTime expiracion = jwtService.getExpirationFromToken(token);
 
-        return new AuthResponse(token, usuario.getId(), usuario.getRol());
+        log.info("Login exitoso para usuario: {}", usuario.getEmail());
+
+        return new AuthResponse(
+                token,
+                "Bearer",
+                usuario.getId(),
+                usuario.getNombreCompleto(),
+                usuario.getEmail(),
+                usuario.getDni(),
+                usuario.getRol().name(),
+                usuario.getGenero().name(),
+                usuario.getActivo(),
+                expiracion,
+                LocalDateTime.now()
+        );
     }
 
     @Override
     public AuthResponse registrar(RegisterCommand command) {
+        log.info("Registrando nuevo usuario: {}", command.email());
 
-        if (usuarioRepo.buscarPorEmail(command.email()) != null)
-            throw new IllegalStateException("Email ya registrado");
+        try {
+            Genero genero = command.genero() != null ?
+                    Genero.valueOf(command.genero().toUpperCase()) :
+                    Genero.PREFIERO_NO_DECIR;
 
-        if (usuarioRepo.buscarPorDni(command.dni()) != null)
-            throw new IllegalStateException("DNI ya registrado");
+            Rol rol = validarYAsignarRol(command.rol());
 
-        String rol = command.rol();
-        if (rol == null || rol.isBlank()) {
-            rol = "CLIENTE"; // por defecto
-        } else {
-            rol = rol.toUpperCase();
-            if (!rol.equals("ADMIN") && !rol.equals("RECEPCIONISTA") && !rol.equals("CLIENTE")) {
-                rol = "CLIENTE"; // si envían basura
+            Usuario usuario = Usuario.builder()
+                    .nombre(command.nombre().trim())
+                    .apellido(command.apellido().trim())
+                    .genero(genero)
+                    .email(command.email().trim().toLowerCase())
+                    .dni(command.dni().trim())
+                    .telefono(command.telefono() != null ? command.telefono().trim() : null)
+                    .direccion(command.direccion() != null ? command.direccion().trim() : null)
+                    .password(passwordEncoder.encode(command.password()))
+                    .rol(rol)
+                    .activo(true)
+                    .build();
+
+            Usuario usuarioCreado = usuarioUseCase.crear(usuario);
+            String token = jwtService.generateToken(usuarioCreado);
+            LocalDateTime expiracion = jwtService.getExpirationFromToken(token);
+
+            log.info("Usuario registrado exitosamente: {}", command.email());
+
+            return new AuthResponse(
+                    token,
+                    "Bearer",
+                    usuarioCreado.getId(),
+                    usuarioCreado.getNombreCompleto(),
+                    usuarioCreado.getEmail(),
+                    usuarioCreado.getDni(),
+                    usuarioCreado.getRol().name(),
+                    usuarioCreado.getGenero().name(),
+                    usuarioCreado.getActivo(),
+                    expiracion,
+                    LocalDateTime.now()
+            );
+
+        } catch (UsuarioDuplicateException e) {
+            log.warn("Registro fallido - {}: {}", e.getCode(), e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Error en registro: {}", e.getMessage());
+            throw new UsuarioValidationException("Error en el registro: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void validarToken(String token) {
+        if (!jwtService.isTokenValid(token)) {
+            throw new UsuarioValidationException("Token inválido o expirado");
+        }
+    }
+
+    private Usuario buscarUsuarioPorEmailODni(String emailOrDni) {
+        try {
+            return usuarioUseCase.obtenerPorEmail(emailOrDni);
+        } catch (UsuarioNotFoundException e) {
+            try {
+                return usuarioUseCase.obtenerPorDni(emailOrDni);
+            } catch (UsuarioNotFoundException ex) {
+                return null;
             }
         }
+    }
 
-        var usuario = usuarioRepo.guardar(
-                Usuario.builder()
-                        .id(null)
-                        .nombre(command.nombre())
-                        .apellido(command.apellido())
-                        .email(command.email())
-                        .dni(command.dni())
-                        .telefono(command.telefono())
-                        .direccion(command.direccion())
-                        .password(passwordEncoder.encode(command.password()))
-                        .rol(rol)
-                        .build()
-        );
-
-        String token = jwtService.generateToken(usuario);
-
-        return new AuthResponse(token, usuario.getId(), usuario.getRol());
+    private Rol validarYAsignarRol(String rol) {
+        if (rol == null || rol.isBlank()) return Rol.CLIENTE;
+        try { return Rol.valueOf(rol.toUpperCase()); }
+        catch (IllegalArgumentException e) {
+            log.warn("Rol no válido: {}, asignando CLIENTE por defecto", rol);
+            return Rol.CLIENTE;
+        }
     }
 }
