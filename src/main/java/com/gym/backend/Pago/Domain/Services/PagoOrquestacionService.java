@@ -4,6 +4,7 @@ import com.gym.backend.Membresias.Domain.Enum.EstadoMembresia;
 import com.gym.backend.Membresias.Domain.Membresia;
 import com.gym.backend.Membresias.Domain.MembresiaUseCase;
 import com.gym.backend.Pago.Application.Dto.CrearPagoRequest;
+import com.gym.backend.Pago.Application.Mapper.PagoMapper;
 import com.gym.backend.Pago.Domain.Pago;
 import com.gym.backend.Pago.Domain.PagoUseCase;
 import com.gym.backend.PaymentCode.Domain.PaymentCode;
@@ -28,6 +29,7 @@ public class PagoOrquestacionService {
     private final MembresiaUseCase membresiaUseCase;
     private final PlanUseCase planUseCase;
     private final UsuarioUseCase usuarioUseCase;
+    private final PagoMapper pagoMapper; // ← AGREGA ESTO
 
     @Transactional
     public ProcesoPagoResponse iniciarProcesoPago(CrearPagoRequest request) {
@@ -40,8 +42,9 @@ public class PagoOrquestacionService {
         if (!request.getMonto().equals(plan.getPrecio())) throw new IllegalStateException("El monto no coincide con el precio del plan");
 
         // Crear pago
-        Pago pago = pagoUseCase.registrar(request);
-
+        Pago pago = pagoUseCase.registrar(
+                pagoMapper.toDomainFromCreateRequest(request)
+        );
         // Generar código de pago
         PaymentCode paymentCode = paymentCodeUseCase.generarParaPago(pago.getId());
 
