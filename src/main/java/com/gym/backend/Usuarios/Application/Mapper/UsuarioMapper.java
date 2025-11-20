@@ -1,6 +1,7 @@
 package com.gym.backend.Usuarios.Application.Mapper;
 
 
+import com.gym.backend.Usuarios.Application.Dto.ActualizarUsuarioRequest;
 import com.gym.backend.Usuarios.Application.Dto.CrearUsuarioRequest;
 import com.gym.backend.Usuarios.Application.Dto.UsuarioDTO;
 import com.gym.backend.Usuarios.Application.Dto.UsuarioResponse;
@@ -17,7 +18,6 @@ public interface UsuarioMapper {
     Usuario toDomain(UsuarioEntity entity);
     UsuarioEntity toEntity(Usuario domain);
 
-    @Mapping(target = "password", ignore = true)
     UsuarioDTO toDTO(Usuario domain);
 
     Usuario toDomain(UsuarioDTO dto);
@@ -28,14 +28,13 @@ public interface UsuarioMapper {
     @Mapping(target = "genero", source = "genero", qualifiedByName = "stringToGenero")
     Usuario toDomainFromCreateRequest(CrearUsuarioRequest request);
 
-    @Mapping(target = "password", ignore = true)
     UsuarioResponse toResponse(Usuario domain);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "email", ignore = true)
     @Mapping(target = "dni", ignore = true)
     @Mapping(target = "password", ignore = true)
-    void updateDomainFromDTO(UsuarioDTO dto, @MappingTarget Usuario domain);
+    void updateDomainFromActualizarRequest(ActualizarUsuarioRequest request, @MappingTarget Usuario domain);
 
     @Named("stringToRol")
     default Rol stringToRol(String rol) {

@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 public record RegisterCommand(
         @NotBlank String nombre,
         @NotBlank String apellido,
-        String genero,  // Agregado para coincidir con Usuarios
+        String genero,
         @NotBlank String email,
         @NotBlank String dni,
         String telefono,

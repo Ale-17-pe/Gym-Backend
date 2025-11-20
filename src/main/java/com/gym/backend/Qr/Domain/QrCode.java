@@ -4,11 +4,25 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Builder
 @AllArgsConstructor
 public class QrCode {
+    private String codigoPago;
+    private String imagenBase64;
+    private LocalDateTime fechaGeneracion;
+    private int tamaño;
+    private String formato;
 
-    private String codigoPago; // El código de pago: GYM-91A23F
-    private String imagenBase64; // QR en Base64
+    // Métodos de utilidad
+    public String getDataUri() {
+        return "data:image/png;base64," + imagenBase64;
+    }
+
+    public boolean esValido() {
+        return codigoPago != null && !codigoPago.trim().isEmpty() &&
+                imagenBase64 != null && !imagenBase64.trim().isEmpty();
+    }
 }

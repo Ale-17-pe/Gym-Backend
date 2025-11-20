@@ -33,7 +33,8 @@ public class MembresiaEntity {
     @PrePersist protected void onCreate() {
         fechaCreacion = LocalDate.now();
         fechaActualizacion = LocalDate.now();
-        if (estado == null) estado = EstadoMembresia.ACTIVA;
+        if (estado == null)
+            throw new IllegalStateException("Estado no puede ser null");
     }
     @PreUpdate protected void onUpdate() {
         fechaActualizacion = LocalDate.now();

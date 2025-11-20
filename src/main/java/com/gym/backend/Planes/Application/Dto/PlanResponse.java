@@ -2,6 +2,8 @@ package com.gym.backend.Planes.Application.Dto;
 
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Data
 public class PlanResponse {
     private Long id;
@@ -11,5 +13,12 @@ public class PlanResponse {
     private Integer duracionDias;
     private Boolean activo;
     private String beneficios;
-    private Double precioMensual; // Campo calculado
+    private Double precioMensual;
+
+    private Integer vecesContratado;
+    private Double ratingPromedio;
+    private Boolean destacado;
+    private String categoria;
+    private LocalDateTime fechaCreacion;
+    private LocalDateTime fechaActualizacion;
 }

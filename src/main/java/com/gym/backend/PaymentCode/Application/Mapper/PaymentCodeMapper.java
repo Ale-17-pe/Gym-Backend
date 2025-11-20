@@ -1,6 +1,5 @@
 package com.gym.backend.PaymentCode.Application.Mapper;
 
-
 import com.gym.backend.PaymentCode.Application.Dto.PaymentCodeDTO;
 import com.gym.backend.PaymentCode.Application.Dto.PaymentCodeResponse;
 import com.gym.backend.PaymentCode.Domain.PaymentCode;
@@ -23,9 +22,14 @@ public interface PaymentCodeMapper {
     @Named("calcularTiempoRestante")
     default String calcularTiempoRestante(PaymentCode paymentCode) {
         if (paymentCode.estaExpirado()) return "Expirado";
-        java.time.Duration duracion = java.time.Duration.between(java.time.LocalDateTime.now(), paymentCode.getFechaExpiracion());
-        long horas = duracion.toHours();
-        long minutos = duracion.toMinutesPart();
-        return String.format("%02d:%02d", horas, minutos);
+
+        long minutos = paymentCode.minutosRestantes();
+        if (minutos < 60) {
+            return minutos + " min";
+        } else {
+            long horas = paymentCode.horasRestantes();
+            long minutosRestantes = minutos % 60;
+            return String.format("%d h %02d min", horas, minutosRestantes);
+        }
     }
 }

@@ -3,21 +3,55 @@ package com.gym.backend.HistorialMembresias.Domain;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
+@Setter
 @Builder
 @AllArgsConstructor
 public class HistorialMembresia {
-
     private Long id;
+    private Long membresiaId;
     private Long usuarioId;
     private Long planId;
+    private String accion; // CREAR, EXTENDER, SUSPENDER, REACTIVAR, CANCELAR, VENCER
+    private String estadoAnterior;
+    private String estadoNuevo;
+    private String motivoCambio;
+    private String usuarioModificacion;
+    private String ipOrigen;
+    private LocalDateTime fechaCambio;
+    private LocalDateTime fechaCreacion;
+    private LocalDateTime fechaActualizacion;
 
-    private LocalDate fechaInicio;
-    private LocalDate fechaFin;
+    // Métodos de negocio
+    public boolean esCreacion() {
+        return "CREAR".equals(accion);
+    }
 
-    private String accion; // CREACION, RENOVACION, VENCIMIENTO
-    private String estado; // ACTIVA, VENCIDA, CANCELADA
+    public boolean esExtension() {
+        return "EXTENDER".equals(accion);
+    }
+
+    public boolean esSuspension() {
+        return "SUSPENDER".equals(accion);
+    }
+
+    public boolean esReactivacion() {
+        return "REACTIVAR".equals(accion);
+    }
+
+    public boolean esCancelacion() {
+        return "CANCELAR".equals(accion);
+    }
+
+    public boolean esVencimiento() {
+        return "VENCER".equals(accion);
+    }
+
+    public String obtenerTipoCambio() {
+        return accion;
+    }
 }

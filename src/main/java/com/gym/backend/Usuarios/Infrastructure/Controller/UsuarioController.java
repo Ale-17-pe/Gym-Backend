@@ -1,5 +1,6 @@
 package com.gym.backend.Usuarios.Infrastructure.Controller;
 
+import com.gym.backend.Usuarios.Application.Dto.ActualizarUsuarioRequest;
 import com.gym.backend.Usuarios.Application.Dto.CrearUsuarioRequest;
 import com.gym.backend.Usuarios.Application.Dto.UsuarioResponse;
 import com.gym.backend.Usuarios.Application.Mapper.UsuarioMapper;
@@ -8,12 +9,17 @@ import com.gym.backend.Usuarios.Domain.Enum.Rol;
 import com.gym.backend.Usuarios.Domain.Usuario;
 import com.gym.backend.Usuarios.Domain.UsuarioUseCase;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/usuarios")
 @RequiredArgsConstructor
@@ -24,14 +30,23 @@ public class UsuarioController {
 
     @PostMapping
     public ResponseEntity<UsuarioResponse> crear(@RequestBody CrearUsuarioRequest request) {
-        Usuario usuario = mapper.toDomainFromCreateRequest(request);
-        Usuario creado = useCase.crear(usuario);
+        log.info("Creando usuario: {}", request.getEmail());
+        var usuario = mapper.toDomainFromCreateRequest(request);
+        var creado = useCase.crear(usuario);
         return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toResponse(creado));
     }
 
     @GetMapping
     public List<UsuarioResponse> listar() {
         return useCase.listar().stream().map(mapper::toResponse).toList();
+    }
+
+    @GetMapping("/paginated")
+    public Page<UsuarioResponse> listarPaginated(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return useCase.listarPaginated(pageable).map(mapper::toResponse);
     }
 
     @GetMapping("/activos")
@@ -60,23 +75,10 @@ public class UsuarioController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UsuarioResponse> actualizar(@PathVariable Long id, @RequestBody CrearUsuarioRequest request) {
-        Usuario usuarioExistente = useCase.obtener(id);
-        Usuario usuarioActualizado = mapper.toDomainFromCreateRequest(request);
-        usuarioActualizado = Usuario.builder()
-                .id(id)
-                .nombre(usuarioActualizado.getNombre())
-                .apellido(usuarioActualizado.getApellido())
-                .genero(usuarioActualizado.getGenero())
-                .email(usuarioExistente.getEmail())
-                .dni(usuarioExistente.getDni())
-                .telefono(usuarioActualizado.getTelefono())
-                .direccion(usuarioActualizado.getDireccion())
-                .password(usuarioActualizado.getPassword())
-                .rol(usuarioActualizado.getRol())
-                .activo(usuarioActualizado.getActivo())
-                .build();
-        Usuario actualizado = useCase.actualizar(usuarioActualizado);
+    public ResponseEntity<UsuarioResponse> actualizar(@PathVariable Long id,
+                                                      @RequestBody ActualizarUsuarioRequest request) {
+        log.info("Actualizando usuario ID: {}", id);
+        var actualizado = useCase.actualizar(id, request);
         return ResponseEntity.ok(mapper.toResponse(actualizado));
     }
 

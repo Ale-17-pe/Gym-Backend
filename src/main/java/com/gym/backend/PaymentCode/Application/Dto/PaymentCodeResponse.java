@@ -15,4 +15,6 @@ public class PaymentCodeResponse {
     private boolean expirado;
     private boolean puedeUsar;
     private String tiempoRestante;
+    private LocalDateTime fechaCreacion;
+    private LocalDateTime fechaActualizacion;
 }

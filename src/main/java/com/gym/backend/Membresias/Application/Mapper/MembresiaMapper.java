@@ -7,12 +7,18 @@ import com.gym.backend.Membresias.Domain.Membresia;
 import com.gym.backend.Membresias.Infrastructure.Entity.MembresiaEntity;
 import org.mapstruct.*;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring",
+        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface MembresiaMapper {
     Membresia toDomain(MembresiaEntity entity);
     MembresiaEntity toEntity(Membresia domain);
     MembresiaDTO toDTO(Membresia domain);
     Membresia toDomain(MembresiaDTO dto);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "estado", ignore = true)
+    @Mapping(target = "fechaCreacion", ignore = true)
+    @Mapping(target = "fechaActualizacion", ignore = true)
     Membresia toDomainFromRequest(CrearMembresiaRequest request);
 
     @Mapping(target = "activa", expression = "java(membresia.estaActiva())")

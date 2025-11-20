@@ -38,6 +38,22 @@ public class PlanEntity {
     @Column(length = 1000)
     private String beneficios;
 
+    // Nuevos campos para analytics
+    @Column(nullable = false)
+    @Builder.Default
+    private Integer vecesContratado = 0;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Double ratingPromedio = 0.0;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean destacado = false;
+
+    @Column(length = 50)
+    private String categoria; // BASIC, PREMIUM, VIP, etc.
+
     @Column(nullable = false)
     private LocalDateTime fechaCreacion;
 
@@ -50,10 +66,24 @@ public class PlanEntity {
         if (activo == null) {
             activo = true;
         }
+        if (vecesContratado == null) {
+            vecesContratado = 0;
+        }
+        if (ratingPromedio == null) {
+            ratingPromedio = 0.0;
+        }
+        if (destacado == null) {
+            destacado = false;
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
         fechaActualizacion = LocalDateTime.now();
+    }
+
+    // Método para incrementar contrataciones
+    public void incrementarContrataciones() {
+        this.vecesContratado++;
     }
 }

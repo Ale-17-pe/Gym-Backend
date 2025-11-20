@@ -8,6 +8,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Getter
+@Setter
 @Builder
 @AllArgsConstructor
 public class Pago {
@@ -31,7 +32,18 @@ public class Pago {
 
     public boolean esConfirmado() { return EstadoPago.CONFIRMADO.equals(estado); }
     public boolean esPendiente() { return EstadoPago.PENDIENTE.equals(estado); }
-    public void confirmar() { this.estado = EstadoPago.CONFIRMADO; this.fechaPago = LocalDateTime.now(); }
-    public void rechazar() { this.estado = EstadoPago.RECHAZADO; }
+    public void confirmar() {
+        this.estado = EstadoPago.CONFIRMADO;
+        this.fechaPago = LocalDateTime.now();
+        this.fechaActualizacion = LocalDateTime.now();
+    }
+    public void rechazar() {
+        this.estado = EstadoPago.RECHAZADO;
+        this.fechaActualizacion = LocalDateTime.now();
+    }
+    public void cancelar() {
+        this.estado = EstadoPago.CANCELADO;
+        this.fechaActualizacion = LocalDateTime.now();
+    }
     public boolean puedeSerConfirmado() { return esPendiente(); }
 }

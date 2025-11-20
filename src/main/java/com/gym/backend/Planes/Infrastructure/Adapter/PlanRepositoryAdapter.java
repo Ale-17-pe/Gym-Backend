@@ -5,6 +5,8 @@ import com.gym.backend.Planes.Domain.PlanRepositoryPort;
 import com.gym.backend.Planes.Infrastructure.Entity.PlanEntity;
 import com.gym.backend.Planes.Infrastructure.Jpa.PlanJpaRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -24,17 +26,12 @@ public class PlanRepositoryAdapter implements PlanRepositoryPort {
 
     @Override
     public Plan actualizar(Plan plan) {
-        PlanEntity existente = jpa.findById(plan.getId())
+        return jpa.findById(plan.getId())
+                .map(existente -> {
+                    actualizarEntityDesdeDomain(existente, plan);
+                    return toDomain(jpa.save(existente));
+                })
                 .orElseThrow(() -> new RuntimeException("Plan no encontrado para actualizar"));
-
-        existente.setNombrePlan(plan.getNombrePlan());
-        existente.setDescripcion(plan.getDescripcion());
-        existente.setPrecio(plan.getPrecio());
-        existente.setDuracionDias(plan.getDuracionDias());
-        existente.setActivo(plan.getActivo());
-        existente.setBeneficios(plan.getBeneficios());
-
-        return toDomain(jpa.save(existente));
     }
 
     @Override
@@ -53,8 +50,18 @@ public class PlanRepositoryAdapter implements PlanRepositoryPort {
     }
 
     @Override
+    public Page<Plan> listarPaginated(Pageable pageable) {
+        return jpa.findAll(pageable).map(this::toDomain);
+    }
+
+    @Override
     public List<Plan> listarActivos() {
         return jpa.findByActivoTrue().stream().map(this::toDomain).toList();
+    }
+
+    @Override
+    public Page<Plan> listarActivosPaginated(Pageable pageable) {
+        return jpa.findByActivoTrue(pageable).map(this::toDomain);
     }
 
     @Override
@@ -63,8 +70,59 @@ public class PlanRepositoryAdapter implements PlanRepositoryPort {
     }
 
     @Override
+    public List<Plan> buscarPorCategoria(String categoria) {
+        return jpa.findByCategoria(categoria).stream().map(this::toDomain).toList();
+    }
+
+    @Override
+    public List<Plan> buscarDestacados() {
+        return jpa.findByDestacadoTrueAndActivoTrue().stream().map(this::toDomain).toList();
+    }
+
+    @Override
+    public List<Plan> buscarPorPrecioMenorIgual(Double precioMax) {
+        return jpa.findByPrecioLessThanEqual(precioMax).stream().map(this::toDomain).toList();
+    }
+
+    @Override
+    public Page<Plan> buscarPorRangoPrecio(Double precioMin, Double precioMax, Pageable pageable) {
+        return jpa.findByPrecioBetweenAndActivoTrue(precioMin, precioMax, pageable)
+                .map(this::toDomain);
+    }
+
+    @Override
+    public Long contarPlanesActivos() {
+        return jpa.countByActivoTrue();
+    }
+
+    @Override
+    public Double obtenerPrecioPromedio() {
+        return jpa.findPrecioPromedioByActivoTrue();
+    }
+
+    @Override
+    public Plan obtenerPlanMasContratado() {
+        return jpa.findTopByOrderByVecesContratadoDesc()
+                .map(this::toDomain)
+                .orElse(null);
+    }
+
+    @Override
     public void eliminar(Long id) {
         jpa.deleteById(id);
+    }
+
+    private void actualizarEntityDesdeDomain(PlanEntity entity, Plan domain) {
+        entity.setNombrePlan(domain.getNombrePlan());
+        entity.setDescripcion(domain.getDescripcion());
+        entity.setPrecio(domain.getPrecio());
+        entity.setDuracionDias(domain.getDuracionDias());
+        entity.setActivo(domain.getActivo());
+        entity.setBeneficios(domain.getBeneficios());
+        entity.setVecesContratado(domain.getVecesContratado());
+        entity.setRatingPromedio(domain.getRatingPromedio());
+        entity.setDestacado(domain.getDestacado());
+        entity.setCategoria(domain.getCategoria());
     }
 
     private Plan toDomain(PlanEntity entity) {
@@ -76,6 +134,13 @@ public class PlanRepositoryAdapter implements PlanRepositoryPort {
                 .duracionDias(entity.getDuracionDias())
                 .activo(entity.getActivo())
                 .beneficios(entity.getBeneficios())
+                // Agregar los campos que faltaban
+                .vecesContratado(entity.getVecesContratado())
+                .ratingPromedio(entity.getRatingPromedio())
+                .destacado(entity.getDestacado())
+                .categoria(entity.getCategoria())
+                .fechaCreacion(entity.getFechaCreacion())
+                .fechaActualizacion(entity.getFechaActualizacion())
                 .build();
     }
 
@@ -88,6 +153,13 @@ public class PlanRepositoryAdapter implements PlanRepositoryPort {
                 .duracionDias(domain.getDuracionDias())
                 .activo(domain.getActivo())
                 .beneficios(domain.getBeneficios())
+                // Agregar los campos que faltaban
+                .vecesContratado(domain.getVecesContratado())
+                .ratingPromedio(domain.getRatingPromedio())
+                .destacado(domain.getDestacado())
+                .categoria(domain.getCategoria())
+                .fechaCreacion(domain.getFechaCreacion())
+                .fechaActualizacion(domain.getFechaActualizacion())
                 .build();
     }
 }

@@ -7,11 +7,12 @@ import com.gym.backend.Usuarios.Domain.UsuarioRepositoryPort;
 import com.gym.backend.Usuarios.Infrastructure.Entity.UsuarioEntity;
 import com.gym.backend.Usuarios.Infrastructure.Jpa.UsuarioJpaRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
-
 @Component
 @RequiredArgsConstructor
 public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
@@ -25,22 +26,12 @@ public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
 
     @Override
     public Usuario actualizar(Usuario usuario) {
-        UsuarioEntity existente = jpa.findById(usuario.getId())
+        return jpa.findById(usuario.getId())
+                .map(existente -> {
+                    actualizarEntityDesdeDomain(existente, usuario);
+                    return toDomain(jpa.save(existente));
+                })
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado para actualizar"));
-
-        existente.setNombre(usuario.getNombre());
-        existente.setApellido(usuario.getApellido());
-        existente.setGenero(usuario.getGenero());
-        existente.setTelefono(usuario.getTelefono());
-        existente.setDireccion(usuario.getDireccion());
-        existente.setRol(usuario.getRol());
-        existente.setActivo(usuario.getActivo());
-
-        if (usuario.getPassword() != null && !usuario.getPassword().trim().isEmpty()) {
-            existente.setPassword(usuario.getPassword());
-        }
-
-        return toDomain(jpa.save(existente));
     }
 
     @Override
@@ -64,8 +55,18 @@ public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
     }
 
     @Override
+    public Page<Usuario> listarPaginated(Pageable pageable) {
+        return jpa.findAll(pageable).map(this::toDomain);
+    }
+
+    @Override
     public List<Usuario> listarPorRol(Rol rol) {
         return jpa.findByRol(rol).stream().map(this::toDomain).toList();
+    }
+
+    @Override
+    public Page<Usuario> listarPorRolPaginated(Rol rol, Pageable pageable) {
+        return jpa.findByRol(rol, pageable).map(this::toDomain);
     }
 
     @Override
@@ -79,7 +80,23 @@ public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
     }
 
     @Override
-    public void eliminar(Long id) { jpa.deleteById(id); }
+    public void eliminar(Long id) {
+        jpa.deleteById(id);
+    }
+
+    private void actualizarEntityDesdeDomain(UsuarioEntity entity, Usuario domain) {
+        entity.setNombre(domain.getNombre());
+        entity.setApellido(domain.getApellido());
+        entity.setGenero(domain.getGenero());
+        entity.setTelefono(domain.getTelefono());
+        entity.setDireccion(domain.getDireccion());
+        entity.setRol(domain.getRol());
+        entity.setActivo(domain.getActivo());
+
+        if (domain.getPassword() != null && !domain.getPassword().trim().isEmpty()) {
+            entity.setPassword(domain.getPassword());
+        }
+    }
 
     private Usuario toDomain(UsuarioEntity entity) {
         return Usuario.builder()

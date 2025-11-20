@@ -1,5 +1,6 @@
 package com.gym.backend.Pago.Domain.Services;
 
+import com.gym.backend.HistorialPagos.Domain.HistorialPagoUseCase;
 import com.gym.backend.Membresias.Domain.Enum.EstadoMembresia;
 import com.gym.backend.Membresias.Domain.Membresia;
 import com.gym.backend.Membresias.Domain.MembresiaUseCase;
@@ -23,59 +24,104 @@ import java.time.LocalDate;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class PagoOrquestacionService {
     private final PagoUseCase pagoUseCase;
     private final PaymentCodeUseCase paymentCodeUseCase;
     private final MembresiaUseCase membresiaUseCase;
     private final PlanUseCase planUseCase;
     private final UsuarioUseCase usuarioUseCase;
-    private final PagoMapper pagoMapper; // ← AGREGA ESTO
+    private final HistorialPagoUseCase historialPago;
+    private final PagoMapper pagoMapper;
 
     @Transactional
     public ProcesoPagoResponse iniciarProcesoPago(CrearPagoRequest request) {
         log.info("Iniciando proceso de pago para usuario: {}, plan: {}", request.getUsuarioId(), request.getPlanId());
 
-        // Validaciones
-        usuarioUseCase.obtener(request.getUsuarioId());
+        try {
+            // Validaciones más robustas
+            validarPrecondicionesPago(request);
+
+            // Crear pago
+            Pago pago = pagoMapper.toDomainFromCreateRequest(request);
+            Pago pagoRegistrado = pagoUseCase.registrar(pago);
+
+            historialPago.registrarCambioAutomatico(
+                    pagoRegistrado.getId(),
+                    pagoRegistrado.getUsuarioId(),
+                    pagoRegistrado.getPlanId(),
+                    pagoRegistrado.getMonto(),
+                    null,
+                    "PENDIENTE",
+                    "Pago iniciado"
+            );
+
+            // Generar código de pago
+            PaymentCode paymentCode = paymentCodeUseCase.generarParaPago(pagoRegistrado.getId());
+
+            log.info("Proceso de pago iniciado - Pago ID: {}, Código: {}", pagoRegistrado.getId(), paymentCode.getCodigo());
+
+            return ProcesoPagoResponse.builder()
+                    .pago(pagoRegistrado)
+                    .paymentCode(paymentCode)
+                    .build();
+
+        } catch (Exception e) {
+            log.error("Error al iniciar proceso de pago: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    private void validarPrecondicionesPago(CrearPagoRequest request) {
+        // Validar que el usuario existe y está activo
+        var usuario = usuarioUseCase.obtener(request.getUsuarioId());
+        usuarioUseCase.verificarUsuarioActivo(usuario.getId());
+
+        // Validar que el plan existe y está activo
         Plan plan = planUseCase.obtener(request.getPlanId());
-        if (!plan.esActivo()) throw new IllegalStateException("El plan no está activo");
-        if (!request.getMonto().equals(plan.getPrecio())) throw new IllegalStateException("El monto no coincide con el precio del plan");
+        if (!plan.esActivo()) {throw new IllegalStateException("El plan no está activo");}
 
-        // Crear pago
-        Pago pago = pagoUseCase.registrar(
-                pagoMapper.toDomainFromCreateRequest(request)
-        );
-        // Generar código de pago
-        PaymentCode paymentCode = paymentCodeUseCase.generarParaPago(pago.getId());
-
-        log.info("Proceso de pago iniciado - Pago ID: {}, Código: {}", pago.getId(), paymentCode.getCodigo());
-
-        return ProcesoPagoResponse.builder()
-                .pago(pago)
-                .paymentCode(paymentCode)
-                .build();
+        // Validar que el monto coincide con el precio del plan
+        if (!request.getMonto().equals(plan.getPrecio())) {
+            throw new IllegalStateException("El monto no coincide con el precio del plan");}
     }
 
     @Transactional
     public Pago confirmarPago(String codigoPago) {
         log.info("Confirmando pago con código: {}", codigoPago);
 
-        // Validar código
-        PaymentCode paymentCode = paymentCodeUseCase.validarCodigo(codigoPago);
+        try {
+            // Validar código
+            PaymentCode paymentCode = paymentCodeUseCase.validarCodigo(codigoPago);
 
-        // Obtener y confirmar pago
-        Pago pago = pagoUseCase.obtener(paymentCode.getPagoId());
-        Pago pagoConfirmado = pagoUseCase.confirmar(pago.getId());
+            // Obtener y confirmar pago
+            Pago pago = pagoUseCase.obtener(paymentCode.getPagoId());
+            Pago pagoConfirmado = pagoUseCase.confirmar(pago.getId());
 
-        // Marcar código como usado
-        paymentCodeUseCase.marcarComoUsado(paymentCode.getId());
+            // Marcar código como usado
+            paymentCodeUseCase.marcarComoUsado(paymentCode.getId());
 
-        // Crear/actualizar membresía
-        crearOActualizarMembresia(pagoConfirmado);
+            historialPago.registrarCambioAutomatico(
+                    pagoConfirmado.getId(),
+                    pagoConfirmado.getUsuarioId(),
+                    pagoConfirmado.getPlanId(),
+                    pagoConfirmado.getMonto(),
+                    pago.getEstado().name(),
+                    "CONFIRMADO",
+                    "Confirmación de pago"
+            );
 
-        log.info("Pago confirmado exitosamente - Pago ID: {}, Usuario: {}", pagoConfirmado.getId(), pagoConfirmado.getUsuarioId());
+            // Crear/actualizar membresía
+            crearOActualizarMembresia(pagoConfirmado);
 
-        return pagoConfirmado;
+            log.info("Pago confirmado exitosamente - Pago ID: {}, Usuario: {}", pagoConfirmado.getId(), pagoConfirmado.getUsuarioId());
+
+            return pagoConfirmado;
+
+        } catch (Exception e) {
+            log.error("Error al confirmar pago: {}", e.getMessage(), e);
+            throw e;
+        }
     }
 
     private void crearOActualizarMembresia(Pago pago) {
@@ -87,6 +133,7 @@ public class PagoOrquestacionService {
         if (membresiaExistente != null) {
             // Extender membresía existente
             membresiaUseCase.extender(membresiaExistente.getId(), plan.getDuracionDias());
+
             log.info("Membresía extendida para usuario: {}", pago.getUsuarioId());
         } else {
             // Crear nueva membresía

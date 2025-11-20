@@ -17,4 +17,6 @@ public class MembresiaResponse {
     private long diasRestantes;
     private String nombrePlan;
     private String nombreUsuario;
+    private LocalDate fechaCreacion;
+    private LocalDate fechaActualizacion;
 }

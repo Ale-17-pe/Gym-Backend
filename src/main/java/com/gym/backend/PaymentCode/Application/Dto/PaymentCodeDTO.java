@@ -13,4 +13,6 @@ public class PaymentCodeDTO {
     private LocalDateTime fechaGeneracion;
     private LocalDateTime fechaExpiracion;
     private EstadoPaymentCode estado;
+    private LocalDateTime fechaCreacion;
+    private LocalDateTime fechaActualizacion;
 }

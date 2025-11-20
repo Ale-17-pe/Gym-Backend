@@ -1,6 +1,5 @@
 package com.gym.backend.Membresias.Application.Dto;
 
-
 import com.gym.backend.Membresias.Domain.Enum.EstadoMembresia;
 import lombok.Data;
 
@@ -15,4 +14,6 @@ public class MembresiaDTO {
     private LocalDate fechaInicio;
     private LocalDate fechaFin;
     private EstadoMembresia estado;
+    private LocalDate fechaCreacion;
+    private LocalDate fechaActualizacion;
 }

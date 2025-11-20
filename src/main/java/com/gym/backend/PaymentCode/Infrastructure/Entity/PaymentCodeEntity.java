@@ -18,16 +18,42 @@ public class PaymentCodeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false) private Long pagoId;
-    @Column(nullable = false, unique = true, length = 50) private String codigo;
-    @Column(nullable = false) private LocalDateTime fechaGeneracion;
-    @Column(nullable = false) private LocalDateTime fechaExpiracion;
+    @Column(nullable = false)
+    private Long pagoId;
+
+    @Column(nullable = false, unique = true, length = 50)
+    private String codigo;
+
+    @Column(nullable = false)
+    private LocalDateTime fechaGeneracion;
+
+    @Column(nullable = false)
+    private LocalDateTime fechaExpiracion;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20) private EstadoPaymentCode estado;
+    @Column(nullable = false, length = 20)
+    private EstadoPaymentCode estado;
 
-    @PrePersist protected void onCreate() {
-        if (fechaGeneracion == null) fechaGeneracion = LocalDateTime.now();
-        if (estado == null) estado = EstadoPaymentCode.GENERADO;
+    @Column(nullable = false)
+    private LocalDateTime fechaCreacion;
+
+    @Column(nullable = false)
+    private LocalDateTime fechaActualizacion;
+
+    @PrePersist
+    protected void onCreate() {
+        fechaCreacion = LocalDateTime.now();
+        fechaActualizacion = LocalDateTime.now();
+        if (fechaGeneracion == null) {
+            fechaGeneracion = LocalDateTime.now();
+        }
+        if (estado == null) {
+            estado = EstadoPaymentCode.GENERADO;
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        fechaActualizacion = LocalDateTime.now();
     }
 }

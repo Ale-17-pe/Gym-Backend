@@ -41,7 +41,7 @@ public class JwtService {
                     .claim("id", usuario.getId())
                     .claim("nombre", usuario.getNombre())
                     .claim("apellido", usuario.getApellido())
-                    .claim("rol", usuario.getRol().name())
+                    .claim("rol", "ROLE_" + usuario.getRol().name()) // Añadir ROLE_
                     .setIssuedAt(new Date())
                     .setExpiration(new Date(System.currentTimeMillis() + expiration))
                     .signWith(getSigningKey(), SignatureAlgorithm.HS256)

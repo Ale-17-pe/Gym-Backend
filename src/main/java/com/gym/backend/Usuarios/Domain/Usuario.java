@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Getter
+@Setter
 @Builder
 @AllArgsConstructor
 public class Usuario {
@@ -26,11 +27,11 @@ public class Usuario {
     private Boolean activo;
 
     public void validar() {
-        if (email == null || !email.contains("@")) {
+        if (email == null || !email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
             throw new UsuarioValidationException("Email inválido");
         }
-        if (dni == null || dni.length() < 5) {
-            throw new UsuarioValidationException("DNI debe tener al menos 5 caracteres");
+        if (dni == null || !dni.matches("\\d{8,15}")) {
+            throw new UsuarioValidationException("DNI debe contener solo números y tener entre 8-15 dígitos");
         }
         if (nombre == null || nombre.trim().isEmpty()) {
             throw new UsuarioValidationException("Nombre es requerido");
@@ -40,6 +41,9 @@ public class Usuario {
         }
         if (password == null || password.trim().length() < 6) {
             throw new UsuarioValidationException("Password debe tener al menos 6 caracteres");
+        }
+        if (dni == null || !dni.matches("\\d{8,15}")) {
+            throw new UsuarioValidationException("DNI debe contener solo números y tener entre 8-15 dígitos");
         }
     }
 

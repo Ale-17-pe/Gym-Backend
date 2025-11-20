@@ -1,6 +1,5 @@
 package com.gym.backend.Pago.Domain.Enum;
 
-
 public enum MetodoPago {
     TARJETA_CREDITO,
     TARJETA_DEBITO,
@@ -10,4 +9,7 @@ public enum MetodoPago {
     PAYPAL,
     OTRO,
     BILLETERA_DIGITAL,
+    YAPE,
+    PLIN,
+    TRANSFERENCIA,
 }

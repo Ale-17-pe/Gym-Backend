@@ -5,10 +5,12 @@ import com.gym.backend.Membresias.Domain.Exceptions.MembresiaValidationException
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDate;
 
 @Getter
+@Setter
 @Builder
 @AllArgsConstructor
 public class Membresia {
@@ -29,19 +31,66 @@ public class Membresia {
         if (fechaInicio == null) throw new MembresiaValidationException("La fecha de inicio es requerida");
         if (fechaFin == null) throw new MembresiaValidationException("La fecha de fin es requerida");
         if (fechaFin.isBefore(fechaInicio)) throw new MembresiaValidationException("La fecha de fin no puede ser anterior a la fecha de inicio");
+
+        LocalDate hoy = LocalDate.now();
+        if (fechaInicio.isBefore(hoy.minusDays(1))) {
+            throw new MembresiaValidationException("La fecha de inicio no puede ser muy antigua");
+        }
     }
 
     public boolean estaActiva() {
         LocalDate hoy = LocalDate.now();
-        return estado == EstadoMembresia.ACTIVA && !fechaInicio.isAfter(hoy) && !fechaFin.isBefore(hoy);
+        return estado == EstadoMembresia.ACTIVA &&
+                !fechaInicio.isAfter(hoy) &&
+                !fechaFin.isBefore(hoy);
     }
 
-    public boolean estaVencida() { return LocalDate.now().isAfter(fechaFin); }
-    public void activar() { this.estado = EstadoMembresia.ACTIVA; }
-    public void vencer() { this.estado = EstadoMembresia.VENCIDA; }
+    public boolean estaVencida() {
+        return LocalDate.now().isAfter(fechaFin);
+    }
+
+    public boolean estaPorVencer() {
+        LocalDate hoy = LocalDate.now();
+        LocalDate unaSemanaAntes = fechaFin.minusDays(7);
+        return estaActiva() && (hoy.isAfter(unaSemanaAntes) || hoy.isEqual(unaSemanaAntes));
+    }
+
+    public void activar() {
+        this.estado = EstadoMembresia.ACTIVA;
+        this.fechaActualizacion = LocalDate.now();
+    }
+
+    public void vencer() {
+        this.estado = EstadoMembresia.VENCIDA;
+        this.fechaActualizacion = LocalDate.now();
+    }
+
+    public void suspender() {
+        this.estado = EstadoMembresia.SUSPENDIDA;
+        this.fechaActualizacion = LocalDate.now();
+    }
+
+    public void cancelar() {
+        this.estado = EstadoMembresia.CANCELADA;
+        this.fechaActualizacion = LocalDate.now();
+    }
+
     public long diasRestantes() {
         LocalDate hoy = LocalDate.now();
         if (fechaFin.isBefore(hoy)) return 0;
         return java.time.temporal.ChronoUnit.DAYS.between(hoy, fechaFin);
+    }
+
+    public long diasTranscurridos() {
+        LocalDate hoy = LocalDate.now();
+        if (fechaInicio.isAfter(hoy)) return 0;
+        LocalDate fechaCalculo = fechaFin.isBefore(hoy) ? fechaFin : hoy;
+        return java.time.temporal.ChronoUnit.DAYS.between(fechaInicio, fechaCalculo);
+    }
+
+    public double porcentajeUso() {
+        long totalDias = java.time.temporal.ChronoUnit.DAYS.between(fechaInicio, fechaFin);
+        if (totalDias == 0) return 0.0;
+        return (double) diasTranscurridos() / totalDias * 100;
     }
 }

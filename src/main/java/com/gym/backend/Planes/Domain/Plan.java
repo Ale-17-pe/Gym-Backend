@@ -4,8 +4,12 @@ import com.gym.backend.Planes.Domain.Exceptions.PlanValidationException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
+
+import java.time.LocalDateTime;
 
 @Getter
+@Setter
 @Builder
 @AllArgsConstructor
 public class Plan {
@@ -16,6 +20,16 @@ public class Plan {
     private Integer duracionDias;
     private Boolean activo;
     private String beneficios;
+
+    // Campos de analytics que deben existir
+    private Integer vecesContratado;
+    private Double ratingPromedio;
+    private Boolean destacado;
+    private String categoria;
+
+    // Campos de auditoría que deben existir
+    private LocalDateTime fechaCreacion;
+    private LocalDateTime fechaActualizacion;
 
     public void validar() {
         if (nombrePlan == null || nombrePlan.trim().isEmpty()) {
@@ -29,6 +43,9 @@ public class Plan {
         }
         if (descripcion == null || descripcion.trim().isEmpty()) {
             throw new PlanValidationException("La descripción es requerida");
+        }
+        if (categoria != null && categoria.length() > 50) {
+            throw new PlanValidationException("La categoría no puede exceder 50 caracteres");
         }
     }
 
@@ -47,5 +64,17 @@ public class Plan {
     public Double calcularPrecioMensual() {
         if (duracionDias == null || duracionDias == 0) return precio;
         return (precio / duracionDias) * 30; // Precio mensual aproximado
+    }
+
+    public void incrementarContrataciones() {
+        this.vecesContratado = (this.vecesContratado == null) ? 1 : this.vecesContratado + 1;
+    }
+
+    public void actualizarRating(Double nuevoRating) {
+        if (this.ratingPromedio == null) {
+            this.ratingPromedio = nuevoRating;
+        } else {
+            this.ratingPromedio = (this.ratingPromedio + nuevoRating) / 2;
+        }
     }
 }

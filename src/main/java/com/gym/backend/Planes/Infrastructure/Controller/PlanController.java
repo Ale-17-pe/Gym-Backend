@@ -1,6 +1,7 @@
 package com.gym.backend.Planes.Infrastructure.Controller;
 
 
+import com.gym.backend.Planes.Application.Dto.ActualizarPlanRequest;
 import com.gym.backend.Planes.Application.Dto.CrearPlanRequest;
 import com.gym.backend.Planes.Application.Dto.PlanResponse;
 import com.gym.backend.Planes.Application.Mapper.PlanMapper;
@@ -9,34 +10,35 @@ import com.gym.backend.Planes.Domain.Exceptions.PlanNotFoundException;
 import com.gym.backend.Planes.Domain.Exceptions.PlanValidationException;
 import com.gym.backend.Planes.Domain.Plan;
 import com.gym.backend.Planes.Domain.PlanUseCase;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/planes")
 @RequiredArgsConstructor
+@Validated
 public class PlanController {
 
     private final PlanUseCase useCase;
     private final PlanMapper mapper;
 
     @PostMapping
-    public ResponseEntity<?> crear(@RequestBody CrearPlanRequest request) {
-        try {
-            Plan plan = mapper.toDomainFromCreateRequest(request);
-            Plan creado = useCase.crear(plan);
-            return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toResponse(creado));
-        } catch (PlanDuplicateException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(new ErrorResponse(e.getMessage()));
-        } catch (PlanValidationException e) {
-            return ResponseEntity.badRequest()
-                    .body(new ErrorResponse(e.getMessage()));
-        }
+    public ResponseEntity<PlanResponse> crear(@Valid @RequestBody CrearPlanRequest request) {
+        Plan plan = mapper.toDomainFromCreateRequest(request);
+        Plan creado = useCase.crear(plan);
+        return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toResponse(creado));
     }
 
     @GetMapping
@@ -46,11 +48,29 @@ public class PlanController {
                 .toList();
     }
 
+    @GetMapping("/paginated")
+    public Page<PlanResponse> listarPaginated(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return useCase.listarPaginated(pageable)
+                .map(mapper::toResponse);
+    }
+
     @GetMapping("/activos")
     public List<PlanResponse> listarActivos() {
         return useCase.listarActivos().stream()
                 .map(mapper::toResponse)
                 .toList();
+    }
+
+    @GetMapping("/activos/paginated")
+    public Page<PlanResponse> listarActivosPaginated(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return useCase.listarActivosPaginated(pageable)
+                .map(mapper::toResponse);
     }
 
     @GetMapping("/inactivos")
@@ -61,72 +81,84 @@ public class PlanController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> obtener(@PathVariable Long id) {
-        try {
-            Plan plan = useCase.obtener(id);
-            return ResponseEntity.ok(mapper.toResponse(plan));
-        } catch (PlanNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<PlanResponse> obtener(@PathVariable Long id) {
+        Plan plan = useCase.obtener(id);
+        return ResponseEntity.ok(mapper.toResponse(plan));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> actualizar(@PathVariable Long id, @RequestBody CrearPlanRequest request) {
-        try {
-            Plan planExistente = useCase.obtener(id);
-            Plan planActualizado = mapper.toDomainFromCreateRequest(request);
-            planActualizado = Plan.builder()
-                    .id(id)
-                    .nombrePlan(planActualizado.getNombrePlan())
-                    .descripcion(planActualizado.getDescripcion())
-                    .precio(planActualizado.getPrecio())
-                    .duracionDias(planActualizado.getDuracionDias())
-                    .activo(planActualizado.getActivo())
-                    .beneficios(planActualizado.getBeneficios())
-                    .build();
-
-            Plan actualizado = useCase.actualizar(planActualizado);
-            return ResponseEntity.ok(mapper.toResponse(actualizado));
-        } catch (PlanNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        } catch (PlanDuplicateException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(new ErrorResponse(e.getMessage()));
-        } catch (PlanValidationException e) {
-            return ResponseEntity.badRequest()
-                    .body(new ErrorResponse(e.getMessage()));
-        }
+    public ResponseEntity<PlanResponse> actualizar(@PathVariable Long id,
+                                                   @Valid @RequestBody ActualizarPlanRequest request) {
+        Plan actualizado = useCase.actualizar(id, request);
+        return ResponseEntity.ok(mapper.toResponse(actualizado));
     }
 
     @PatchMapping("/{id}/desactivar")
-    public ResponseEntity<?> desactivar(@PathVariable Long id) {
-        try {
-            Plan desactivado = useCase.desactivar(id);
-            return ResponseEntity.ok(mapper.toResponse(desactivado));
-        } catch (PlanNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<PlanResponse> desactivar(@PathVariable Long id) {
+        Plan desactivado = useCase.desactivar(id);
+        return ResponseEntity.ok(mapper.toResponse(desactivado));
     }
 
     @PatchMapping("/{id}/activar")
-    public ResponseEntity<?> activar(@PathVariable Long id) {
-        try {
-            Plan activado = useCase.activar(id);
-            return ResponseEntity.ok(mapper.toResponse(activado));
-        } catch (PlanNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<PlanResponse> activar(@PathVariable Long id) {
+        Plan activado = useCase.activar(id);
+        return ResponseEntity.ok(mapper.toResponse(activado));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        try {
-            useCase.eliminar(id);
-            return ResponseEntity.noContent().build();
-        } catch (PlanNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+        useCase.eliminar(id);
+        return ResponseEntity.noContent().build();
     }
 
-    public record ErrorResponse(String message) {}
+    // Nuevos endpoints
+    @GetMapping("/categoria/{categoria}")
+    public List<PlanResponse> buscarPorCategoria(@PathVariable String categoria) {
+        return useCase.buscarPorCategoria(categoria).stream()
+                .map(mapper::toResponse)
+                .toList();
+    }
+
+    @GetMapping("/destacados")
+    public List<PlanResponse> buscarDestacados() {
+        return useCase.buscarDestacados().stream()
+                .map(mapper::toResponse)
+                .toList();
+    }
+
+    @GetMapping("/precio/max/{precioMax}")
+    public List<PlanResponse> buscarPorPrecioMenorIgual(@PathVariable Double precioMax) {
+        return useCase.buscarPorPrecioMenorIgual(precioMax).stream()
+                .map(mapper::toResponse)
+                .toList();
+    }
+
+    @GetMapping("/precio/rango")
+    public Page<PlanResponse> buscarPorRangoPrecio(
+            @RequestParam Double precioMin,
+            @RequestParam Double precioMax,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return useCase.buscarPorRangoPrecio(precioMin, precioMax, pageable)
+                .map(mapper::toResponse);
+    }
+
+    @GetMapping("/stats")
+    public Map<String, Object> obtenerEstadisticas() {
+        return useCase.obtenerEstadisticas();
+    }
+
+    @PatchMapping("/{id}/incrementar-contrataciones")
+    public ResponseEntity<Void> incrementarContrataciones(@PathVariable Long id) {
+        useCase.incrementarContrataciones(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{id}/rating")
+    public ResponseEntity<Void> actualizarRating(@PathVariable Long id,
+                                                 @RequestParam Double rating) {
+        useCase.actualizarRating(id, rating);
+        return ResponseEntity.ok().build();
+    }
 }
