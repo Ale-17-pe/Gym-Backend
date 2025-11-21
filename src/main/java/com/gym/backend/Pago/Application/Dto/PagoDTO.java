@@ -17,4 +17,5 @@ public class PagoDTO {
     private String referencia;
     private LocalDateTime fechaCreacion;
     private LocalDateTime fechaPago;
+    private String codigoPago;
 }

@@ -19,26 +19,39 @@ public class PagoEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false) private Long usuarioId;
-    @Column(nullable = false) private Long planId;
-    @Column(nullable = false) private Double monto;
+    @Column(nullable = false)
+    private Long usuarioId;
+    @Column(nullable = false)
+    private Long planId;
+    @Column(nullable = false)
+    private Double monto;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20) private EstadoPago estado;
+    @Column(nullable = false, length = 20)
+    private EstadoPago estado;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30) private MetodoPago metodoPago;
+    @Column(nullable = false, length = 30)
+    private MetodoPago metodoPago;
 
-    @Column(length = 100) private String referencia;
-    @Column(nullable = false) private LocalDateTime fechaCreacion;
+    @Column(length = 100)
+    private String referencia;
+    @Column(unique = true, length = 50)
+    private String codigoPago;
+    @Column(nullable = false)
+    private LocalDateTime fechaCreacion;
     private LocalDateTime fechaPago;
-    @Column(nullable = false) private LocalDateTime fechaActualizacion;
+    @Column(nullable = false)
+    private LocalDateTime fechaActualizacion;
 
-    @PrePersist protected void onCreate() {
+    @PrePersist
+    protected void onCreate() {
         fechaCreacion = LocalDateTime.now();
         fechaActualizacion = LocalDateTime.now();
     }
-    @PreUpdate protected void onUpdate() {
+
+    @PreUpdate
+    protected void onUpdate() {
         fechaActualizacion = LocalDateTime.now();
     }
 }

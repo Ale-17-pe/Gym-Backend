@@ -7,25 +7,24 @@ import com.gym.backend.Pago.Domain.Pago;
 import com.gym.backend.Pago.Infrastructure.Entity.PagoEntity;
 import org.mapstruct.*;
 
-@Mapper(componentModel = "spring",
-        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface PagoMapper {
-    Pago toDomain(PagoEntity entity);
+        Pago toDomain(PagoEntity entity);
 
-    PagoEntity toEntity(Pago domain);
+        PagoEntity toEntity(Pago domain);
 
-    @Mapping(target = "fechaPago", source = "fechaPago")
-    PagoDTO toDTO(Pago domain);
+        @Mapping(target = "fechaPago", source = "fechaPago")
+        PagoDTO toDTO(Pago domain);
 
-    @Mappings({
-            @Mapping(target = "id", ignore = true),
-            @Mapping(target = "estado", ignore = true),
-            @Mapping(target = "fechaCreacion", ignore = true),
-            @Mapping(target = "fechaPago", ignore = true),
-            @Mapping(target = "fechaActualizacion", ignore = true)
-    })
-    Pago toDomainFromCreateRequest(CrearPagoRequest request);
+        @Mappings({
+                        @Mapping(target = "id", ignore = true),
+                        @Mapping(target = "estado", ignore = true),
+                        @Mapping(target = "fechaCreacion", ignore = true),
+                        @Mapping(target = "fechaPago", ignore = true),
+                        @Mapping(target = "fechaActualizacion", ignore = true),
+                        @Mapping(target = "codigoPago", ignore = true)
+        })
+        Pago toDomainFromCreateRequest(CrearPagoRequest request);
 
-    @Mapping(target = "codigoPago", ignore = true)
-    PagoResponse toResponse(Pago domain);
+        PagoResponse toResponse(Pago domain);
 }

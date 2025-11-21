@@ -19,24 +19,27 @@ public class ReportesJpaRepository {
     private EntityManager em;
 
     public List<Object[]> ingresosMensuales() {
-        return em.createNativeQuery("""
-                SELECT 
-                    TO_CHAR(fecha_pago, 'TMMonth YYYY') AS mes, 
-                    COALESCE(SUM(monto), 0) AS total
-                FROM pagos 
-                WHERE estado = 'CONFIRMADO' 
-                    AND fecha_pago >= CURRENT_DATE - INTERVAL '12 months'
-                GROUP BY TO_CHAR(fecha_pago, 'TMMonth YYYY'), EXTRACT(YEAR FROM fecha_pago), EXTRACT(MONTH FROM fecha_pago)
-                ORDER BY EXTRACT(YEAR FROM fecha_pago) DESC, EXTRACT(MONTH FROM fecha_pago) DESC
-                """).getResultList();
+        return em
+                .createNativeQuery(
+                        """
+                                SELECT
+                                    TO_CHAR(fecha_pago, 'TMMonth YYYY') AS mes,
+                                    COALESCE(SUM(monto), 0) AS total
+                                FROM pagos
+                                WHERE estado = 'CONFIRMADO'
+                                    AND fecha_pago >= CURRENT_DATE - INTERVAL '12 months'
+                                GROUP BY TO_CHAR(fecha_pago, 'TMMonth YYYY'), EXTRACT(YEAR FROM fecha_pago), EXTRACT(MONTH FROM fecha_pago)
+                                ORDER BY EXTRACT(YEAR FROM fecha_pago) DESC, EXTRACT(MONTH FROM fecha_pago) DESC
+                                """)
+                .getResultList();
     }
 
     public List<Object[]> membresiasPorEstado() {
         return em.createNativeQuery("""
-                SELECT 
-                    estado, 
+                SELECT
+                    estado,
                     COUNT(*) as cantidad
-                FROM membresias 
+                FROM membresias
                 GROUP BY estado
                 ORDER BY cantidad DESC
                 """).getResultList();
@@ -44,10 +47,10 @@ public class ReportesJpaRepository {
 
     public List<Object[]> asistenciasDiarias() {
         return em.createNativeQuery("""
-                SELECT 
-                    TO_CHAR(fecha_hora, 'YYYY-MM-DD') AS fecha, 
+                SELECT
+                    TO_CHAR(fecha_hora, 'YYYY-MM-DD') AS fecha,
                     COUNT(*) as cantidad
-                FROM asistencias 
+                FROM asistencias
                 WHERE fecha_hora >= CURRENT_DATE - INTERVAL '30 days'
                 GROUP BY TO_CHAR(fecha_hora, 'YYYY-MM-DD')
                 ORDER BY fecha DESC
@@ -56,8 +59,8 @@ public class ReportesJpaRepository {
 
     public List<Object[]> topPlanes() {
         return em.createNativeQuery("""
-                SELECT 
-                    p.nombre_plan, 
+                SELECT
+                    p.nombre_plan,
                     COUNT(*) as cantidad
                 FROM membresias m
                 JOIN planes p ON p.id = m.plan_id
@@ -70,11 +73,11 @@ public class ReportesJpaRepository {
 
     public List<Object[]> ingresosPorRango(LocalDateTime inicio, LocalDateTime fin) {
         return em.createNativeQuery("""
-                SELECT 
-                    TO_CHAR(fecha_pago, 'YYYY-MM-DD') AS fecha, 
+                SELECT
+                    TO_CHAR(fecha_pago, 'YYYY-MM-DD') AS fecha,
                     COALESCE(SUM(monto), 0) AS total
-                FROM pagos 
-                WHERE estado = 'CONFIRMADO' 
+                FROM pagos
+                WHERE estado = 'CONFIRMADO'
                     AND fecha_pago BETWEEN :inicio AND :fin
                 GROUP BY TO_CHAR(fecha_pago, 'YYYY-MM-DD')
                 ORDER BY fecha
@@ -86,10 +89,10 @@ public class ReportesJpaRepository {
 
     public List<Object[]> asistenciasPorRango(LocalDateTime inicio, LocalDateTime fin) {
         return em.createNativeQuery("""
-                SELECT 
-                    TO_CHAR(fecha_hora, 'YYYY-MM-DD') AS fecha, 
+                SELECT
+                    TO_CHAR(fecha_hora, 'YYYY-MM-DD') AS fecha,
                     COUNT(*) as cantidad
-                FROM asistencias 
+                FROM asistencias
                 WHERE fecha_hora BETWEEN :inicio AND :fin
                 GROUP BY TO_CHAR(fecha_hora, 'YYYY-MM-DD')
                 ORDER BY fecha
@@ -100,21 +103,24 @@ public class ReportesJpaRepository {
     }
 
     public List<Object[]> usuariosNuevosPorMes() {
-        return em.createNativeQuery("""
-                SELECT 
-                    TO_CHAR(fecha_creacion, 'TMMonth YYYY') AS mes, 
-                    COUNT(*) as cantidad
-                FROM usuarios 
-                WHERE fecha_creacion >= CURRENT_DATE - INTERVAL '12 months'
-                GROUP BY TO_CHAR(fecha_creacion, 'TMMonth YYYY'), EXTRACT(YEAR FROM fecha_creacion), EXTRACT(MONTH FROM fecha_creacion)
-                ORDER BY EXTRACT(YEAR FROM fecha_creacion) DESC, EXTRACT(MONTH FROM fecha_creacion) DESC
-                """).getResultList();
+        return em
+                .createNativeQuery(
+                        """
+                                SELECT
+                                    TO_CHAR(fecha_creacion, 'TMMonth YYYY') AS mes,
+                                    COUNT(*) as cantidad
+                                FROM usuarios
+                                WHERE fecha_creacion >= CURRENT_DATE - INTERVAL '12 months'
+                                GROUP BY TO_CHAR(fecha_creacion, 'TMMonth YYYY'), EXTRACT(YEAR FROM fecha_creacion), EXTRACT(MONTH FROM fecha_creacion)
+                                ORDER BY EXTRACT(YEAR FROM fecha_creacion) DESC, EXTRACT(MONTH FROM fecha_creacion) DESC
+                                """)
+                .getResultList();
     }
 
     public List<Object[]> membresiasPorPlan() {
         return em.createNativeQuery("""
-                SELECT 
-                    p.nombre_plan, 
+                SELECT
+                    p.nombre_plan,
                     COUNT(*) as cantidad
                 FROM membresias m
                 JOIN planes p ON p.id = m.plan_id
@@ -126,11 +132,11 @@ public class ReportesJpaRepository {
 
     public List<Object[]> pagosPorMetodo() {
         return em.createNativeQuery("""
-                SELECT 
-                    metodo_pago, 
+                SELECT
+                    metodo_pago,
                     COUNT(*) as cantidad,
                     COALESCE(SUM(monto), 0) as total
-                FROM pagos 
+                FROM pagos
                 WHERE estado = 'CONFIRMADO'
                 GROUP BY metodo_pago
                 ORDER BY total DESC
@@ -139,10 +145,10 @@ public class ReportesJpaRepository {
 
     public List<Object[]> asistenciasPorHora(LocalDate fecha) {
         return em.createNativeQuery("""
-                SELECT 
-                    TO_CHAR(fecha_hora, 'HH24:00') AS hora, 
+                SELECT
+                    TO_CHAR(fecha_hora, 'HH24:00') AS hora,
                     COUNT(*) as cantidad
-                FROM asistencias 
+                FROM asistencias
                 WHERE DATE(fecha_hora) = :fecha
                 GROUP BY TO_CHAR(fecha_hora, 'HH24:00')
                 ORDER BY hora
@@ -152,25 +158,28 @@ public class ReportesJpaRepository {
     }
 
     public List<Object[]> rendimientoMensual() {
-        return em.createNativeQuery("""
-                SELECT 
-                    TO_CHAR(p.fecha_pago, 'TMMonth YYYY') AS mes,
-                    COALESCE(SUM(p.monto), 0) as ingresos,
-                    COUNT(DISTINCT m.id) as membresias,
-                    COUNT(DISTINCT a.id) as asistencias
-                FROM pagos p
-                LEFT JOIN membresias m ON m.pago_id = p.id
-                LEFT JOIN asistencias a ON a.membresia_id = m.id
-                WHERE p.estado = 'CONFIRMADO' 
-                    AND p.fecha_pago >= CURRENT_DATE - INTERVAL '12 months'
-                GROUP BY TO_CHAR(p.fecha_pago, 'TMMonth YYYY'), EXTRACT(YEAR FROM p.fecha_pago), EXTRACT(MONTH FROM p.fecha_pago)
-                ORDER BY EXTRACT(YEAR FROM p.fecha_pago) DESC, EXTRACT(MONTH FROM p.fecha_pago) DESC
-                """).getResultList();
+        return em
+                .createNativeQuery(
+                        """
+                                SELECT
+                                    TO_CHAR(p.fecha_pago, 'TMMonth YYYY') AS mes,
+                                    COALESCE(SUM(p.monto), 0) as ingresos,
+                                    COUNT(DISTINCT m.id) as membresias,
+                                    COUNT(DISTINCT a.id) as asistencias
+                                FROM pagos p
+                                LEFT JOIN membresias m ON m.pago_id = p.id
+                                LEFT JOIN asistencias a ON a.membresia_id = m.id
+                                WHERE p.estado = 'CONFIRMADO'
+                                    AND p.fecha_pago >= CURRENT_DATE - INTERVAL '12 months'
+                                GROUP BY TO_CHAR(p.fecha_pago, 'TMMonth YYYY'), EXTRACT(YEAR FROM p.fecha_pago), EXTRACT(MONTH FROM p.fecha_pago)
+                                ORDER BY EXTRACT(YEAR FROM p.fecha_pago) DESC, EXTRACT(MONTH FROM p.fecha_pago) DESC
+                                """)
+                .getResultList();
     }
 
     public List<Object[]> usuariosMasActivos(LocalDateTime inicio, LocalDateTime fin) {
         return em.createNativeQuery("""
-                SELECT 
+                SELECT
                     u.nombre || ' ' || u.apellido as usuario,
                     COUNT(a.id) as asistencias,
                     p.nombre_plan as plan
@@ -190,7 +199,7 @@ public class ReportesJpaRepository {
 
     public List<Object[]> planesPopulares() {
         return em.createNativeQuery("""
-                SELECT 
+                SELECT
                     p.nombre_plan,
                     p.precio,
                     COUNT(m.id) as miembros,
@@ -212,6 +221,7 @@ public class ReportesJpaRepository {
         Long totalUsuarios = (Long) em.createNativeQuery("SELECT COUNT(*) FROM usuarios WHERE activo = true")
                 .getSingleResult();
         stats.put("totalUsuarios", totalUsuarios);
+        stats.put("totalUsuariosActivos", totalUsuarios);
 
         // Total membresías activas
         Long totalMembresias = (Long) em.createNativeQuery("SELECT COUNT(*) FROM membresias WHERE estado = 'ACTIVA'")
@@ -220,28 +230,40 @@ public class ReportesJpaRepository {
 
         // Total asistencias hoy
         Long asistenciasHoy = (Long) em.createNativeQuery("""
-                SELECT COUNT(*) FROM asistencias 
+                SELECT COUNT(*) FROM asistencias
                 WHERE DATE(fecha_hora) = CURRENT_DATE
                 """).getSingleResult();
         stats.put("asistenciasHoy", asistenciasHoy);
 
         // Ingresos del mes
         Double ingresosMes = (Double) em.createNativeQuery("""
-                SELECT COALESCE(SUM(monto), 0) FROM pagos 
-                WHERE estado = 'CONFIRMADO' 
+                SELECT COALESCE(SUM(monto), 0) FROM pagos
+                WHERE estado = 'CONFIRMADO'
                     AND fecha_pago >= DATE_TRUNC('month', CURRENT_DATE)
                 """).getSingleResult();
         stats.put("ingresosMes", ingresosMes);
+        stats.put("ingresosMesActual", ingresosMes);
 
         // Plan más popular
-        Object[] planPopular = (Object[]) em.createNativeQuery("""
-                SELECT p.nombre_plan FROM planes p
-                JOIN membresias m ON m.plan_id = p.id
-                GROUP BY p.nombre_plan
-                ORDER BY COUNT(*) DESC
-                LIMIT 1
+        try {
+            Object planPopularResult = em.createNativeQuery("""
+                    SELECT p.nombre_plan FROM planes p
+                    JOIN membresias m ON m.plan_id = p.id
+                    GROUP BY p.nombre_plan
+                    ORDER BY COUNT(*) DESC
+                    LIMIT 1
+                    """).getSingleResult();
+            stats.put("planPopular", planPopularResult);
+        } catch (Exception e) {
+            stats.put("planPopular", "Sin datos");
+        }
+
+        // Nuevos usuarios últimos 30 días
+        Long nuevosUsuarios = (Long) em.createNativeQuery("""
+                SELECT COUNT(*) FROM usuarios
+                WHERE fecha_creacion >= CURRENT_DATE - INTERVAL '30 days'
                 """).getSingleResult();
-        stats.put("planPopular", planPopular[0]);
+        stats.put("nuevosUsuariosUltimos30Dias", nuevosUsuarios);
 
         stats.put("fechaGeneracion", LocalDateTime.now());
 
@@ -253,8 +275,8 @@ public class ReportesJpaRepository {
 
         // Ingresos en el período
         Double ingresos = (Double) em.createNativeQuery("""
-                SELECT COALESCE(SUM(monto), 0) FROM pagos 
-                WHERE estado = 'CONFIRMADO' 
+                SELECT COALESCE(SUM(monto), 0) FROM pagos
+                WHERE estado = 'CONFIRMADO'
                     AND fecha_pago BETWEEN :inicio AND :fin
                 """)
                 .setParameter("inicio", inicio)
@@ -264,7 +286,7 @@ public class ReportesJpaRepository {
 
         // Asistencias en el período
         Long asistencias = (Long) em.createNativeQuery("""
-                SELECT COUNT(*) FROM asistencias 
+                SELECT COUNT(*) FROM asistencias
                 WHERE fecha_hora BETWEEN :inicio AND :fin
                 """)
                 .setParameter("inicio", inicio)
@@ -274,7 +296,7 @@ public class ReportesJpaRepository {
 
         // Nuevos usuarios en el período
         Long nuevosUsuarios = (Long) em.createNativeQuery("""
-                SELECT COUNT(*) FROM usuarios 
+                SELECT COUNT(*) FROM usuarios
                 WHERE fecha_creacion BETWEEN :inicio AND :fin
                 """)
                 .setParameter("inicio", inicio)
@@ -284,7 +306,7 @@ public class ReportesJpaRepository {
 
         // Nuevas membresías en el período
         Long nuevasMembresias = (Long) em.createNativeQuery("""
-                SELECT COUNT(*) FROM membresias 
+                SELECT COUNT(*) FROM membresias
                 WHERE fecha_creacion BETWEEN :inicio AND :fin
                 """)
                 .setParameter("inicio", inicio)

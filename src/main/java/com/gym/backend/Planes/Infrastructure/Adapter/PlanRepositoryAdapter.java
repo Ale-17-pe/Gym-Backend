@@ -113,16 +113,36 @@ public class PlanRepositoryAdapter implements PlanRepositoryPort {
     }
 
     private void actualizarEntityDesdeDomain(PlanEntity entity, Plan domain) {
-        entity.setNombrePlan(domain.getNombrePlan());
-        entity.setDescripcion(domain.getDescripcion());
-        entity.setPrecio(domain.getPrecio());
-        entity.setDuracionDias(domain.getDuracionDias());
-        entity.setActivo(domain.getActivo());
-        entity.setBeneficios(domain.getBeneficios());
-        entity.setVecesContratado(domain.getVecesContratado());
-        entity.setRatingPromedio(domain.getRatingPromedio());
-        entity.setDestacado(domain.getDestacado());
-        entity.setCategoria(domain.getCategoria());
+        if (domain.getNombrePlan() != null) {
+            entity.setNombrePlan(domain.getNombrePlan());
+        }
+        if (domain.getDescripcion() != null) {
+            entity.setDescripcion(domain.getDescripcion());
+        }
+        if (domain.getPrecio() != null) {
+            entity.setPrecio(domain.getPrecio());
+        }
+        if (domain.getDuracionDias() != null) {
+            entity.setDuracionDias(domain.getDuracionDias());
+        }
+        if (domain.getActivo() != null) {
+            entity.setActivo(domain.getActivo());
+        }
+        if (domain.getBeneficios() != null) {
+            entity.setBeneficios(domain.getBeneficios());
+        }
+        if (domain.getVecesContratado() != null) {
+            entity.setVecesContratado(domain.getVecesContratado());
+        }
+        if (domain.getRatingPromedio() != null) {
+            entity.setRatingPromedio(domain.getRatingPromedio());
+        }
+        if (domain.getDestacado() != null) {
+            entity.setDestacado(domain.getDestacado());
+        }
+        if (domain.getCategoria() != null) {
+            entity.setCategoria(domain.getCategoria());
+        }
     }
 
     private Plan toDomain(PlanEntity entity) {
@@ -134,7 +154,6 @@ public class PlanRepositoryAdapter implements PlanRepositoryPort {
                 .duracionDias(entity.getDuracionDias())
                 .activo(entity.getActivo())
                 .beneficios(entity.getBeneficios())
-                // Agregar los campos que faltaban
                 .vecesContratado(entity.getVecesContratado())
                 .ratingPromedio(entity.getRatingPromedio())
                 .destacado(entity.getDestacado())
@@ -153,7 +172,6 @@ public class PlanRepositoryAdapter implements PlanRepositoryPort {
                 .duracionDias(domain.getDuracionDias())
                 .activo(domain.getActivo())
                 .beneficios(domain.getBeneficios())
-                // Agregar los campos que faltaban
                 .vecesContratado(domain.getVecesContratado())
                 .ratingPromedio(domain.getRatingPromedio())
                 .destacado(domain.getDestacado())

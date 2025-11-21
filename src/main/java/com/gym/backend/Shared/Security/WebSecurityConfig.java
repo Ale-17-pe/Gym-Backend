@@ -22,10 +22,13 @@ public class WebSecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
-    public PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(); }
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
+            throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
@@ -36,16 +39,22 @@ public class WebSecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
+                        // Endpoints públicos
                         .requestMatchers("/api/auth/**", "/api/health/**", "/api/info/**",
-                                "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers("/api/usuarios/**", "/api/planes/**", "/api/configuracion/**").hasRole("ADMINISTRADOR")
-                        .requestMatchers("/api/asistencias/**", "/api/reportes/**").hasAnyRole("RECEPCIONISTA", "ADMINISTRADOR")
+                                "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
+                        .permitAll()
+                        // Permitir acceso público a planes activos (sin login)
+                        .requestMatchers("/api/planes/activos", "/api/planes/destacados").permitAll()
+                        // Endpoints de administrador
+                        .requestMatchers("/api/usuarios/**", "/api/planes/**", "/api/configuracion/**")
+                        .hasRole("ADMINISTRADOR")
+                        // Endpoints de recepcionista y administrador
+                        .requestMatchers("/api/asistencias/**", "/api/reportes/**")
+                        .hasAnyRole("RECEPCIONISTA", "ADMINISTRADOR")
+                        // Endpoints que requieren autenticación
                         .requestMatchers("/api/membresias/**", "/api/pagos/**", "/api/perfil/**").authenticated()
-
-                        .requestMatchers("/api/planes/**").hasRole("ADMINISTRADOR")
-
-                        .anyRequest().authenticated()
-                )
+                        // Cualquier otra petición requiere autenticación
+                        .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .formLogin(form -> form.disable())
                 .httpBasic(httpBasic -> httpBasic.disable());

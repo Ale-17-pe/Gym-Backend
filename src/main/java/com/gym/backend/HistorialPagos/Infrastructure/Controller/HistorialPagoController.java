@@ -1,4 +1,4 @@
-package com.gym.backend.HistorialPagos.Controller;
+package com.gym.backend.HistorialPagos.Infrastructure.Controller;
 
 import com.gym.backend.HistorialPagos.Application.Dto.HistorialPagoDTO;
 import com.gym.backend.HistorialPagos.Application.Dto.HistorialPagoResponse;
@@ -85,9 +85,7 @@ public class HistorialPagoController {
     @GetMapping("/ultimo-cambio/{pagoId}")
     public ResponseEntity<HistorialPagoResponse> obtenerUltimoCambio(@PathVariable Long pagoId) {
         var historial = useCase.obtenerUltimoCambio(pagoId);
-        return historial != null ?
-                ResponseEntity.ok(mapper.toResponse(historial)) :
-                ResponseEntity.notFound().build();
+        return historial != null ? ResponseEntity.ok(mapper.toResponse(historial)) : ResponseEntity.notFound().build();
     }
 
     @GetMapping("/recientes")
