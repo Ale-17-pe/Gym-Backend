@@ -9,13 +9,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.List;
-
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -24,6 +24,7 @@ import java.util.List;
 public class PagoController {
     private final PagoUseCase useCase;
     private final PagoMapper mapper;
+    private final com.gym.backend.Qr.Domain.QrUseCase qrUseCase;
 
     @GetMapping
     public List<PagoDTO> listar() {
@@ -98,7 +99,16 @@ public class PagoController {
         return ResponseEntity.ok(mapper.toDTO(pagoCancelado));
     }
 
+    @PostMapping("/generar-qr")
+    public ResponseEntity<?> generarQR(@RequestBody Map<String, String> request) {
+        String codigo = request.get("codigo");
+        byte[] qrBytes = qrUseCase.generarQRBytes(codigo);
+        String qrBase64 = Base64.getEncoder().encodeToString(qrBytes);
+        return ResponseEntity.ok(Map.of("qrBase64", qrBase64));
+    }
+
     // Records para responses
     public record IngresosResponse(Double totalIngresos, Long totalPagos,
-                                   LocalDateTime fechaInicio, LocalDateTime fechaFin) {}
+            LocalDateTime fechaInicio, LocalDateTime fechaFin) {
+    }
 }
