@@ -49,9 +49,14 @@ public class WebSecurityConfig {
                                                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/planes",
                                                                 "/api/planes/*")
                                                 .permitAll()
+
                                                 // Endpoints de administrador (usuarios y configuración)
                                                 .requestMatchers("/api/usuarios/**", "/api/configuracion/**")
                                                 .hasRole("ADMINISTRADOR")
+                                                // Endpoints de recepcionista - buscar usuarios (solo GET)
+                                                .requestMatchers(org.springframework.http.HttpMethod.GET,
+                                                                "/api/usuarios/dni/**", "/api/usuarios/buscar/**")
+                                                .hasAnyRole("RECEPCIONISTA", "ADMINISTRADOR")
                                                 // Endpoints de administrador para planes (POST, PUT, DELETE)
                                                 .requestMatchers(org.springframework.http.HttpMethod.POST,
                                                                 "/api/planes/**")

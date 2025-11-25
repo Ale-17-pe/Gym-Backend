@@ -188,15 +188,16 @@ public class MembresiaUseCase {
     public Map<String, Object> obtenerEstadisticas() {
         Long totalMembresias = repo.contarTotal();
         Long membresiasActivas = repo.contarPorEstado(EstadoMembresia.ACTIVA);
-        Long membresiasPorVencer = repo.contarPorVencer();
+        Long membresiasPorVencer = 0L;
         Long membresiasVencidas = repo.contarPorEstado(EstadoMembresia.VENCIDA);
 
         return Map.of(
-                "totalMembresias", totalMembresias,
-                "membresiasActivas", membresiasActivas,
-                "membresiasPorVencer", membresiasPorVencer,
-                "membresiasVencidas", membresiasVencidas,
-                "tasaActivas", totalMembresias > 0 ? (double) membresiasActivas / totalMembresias * 100 : 0);
+                "totalMembresias", totalMembresias != null ? totalMembresias : 0L,
+                "membresiasActivas", membresiasActivas != null ? membresiasActivas : 0L,
+                "membresiasVencidas", membresiasVencidas != null ? membresiasVencidas : 0L,
+                "tasaActivas", totalMembresias > 0 ? (double) membresiasActivas / totalMembresias * 100 : 0,
+                "planPopular", 0L // Añadir esta línea
+        );
     }
 
     @Transactional(readOnly = true)

@@ -91,6 +91,11 @@ public class PagoRepositoryAdapter implements PagoRepositoryPort {
         return jpa.countByEstadoAndFechaCreacionBetween(estado, fechaInicio, fechaFin);
     }
 
+    @Override
+    public Long contarPagosPorEstado(EstadoPago estado) {
+        return jpa.countByEstado(estado);
+    }
+
     private void actualizarEntityDesdeDomain(PagoEntity entity, Pago domain) {
         entity.setEstado(domain.getEstado());
         entity.setFechaPago(domain.getFechaPago());

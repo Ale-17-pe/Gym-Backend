@@ -85,7 +85,12 @@ public class PagoController {
         return ResponseEntity.ok(estadisticas);
     }
 
-    // Endpoint para rechazar pagos
+    @GetMapping("/estadisticas")
+    public ResponseEntity<Map<String, Object>> obtenerEstadisticas() {
+        var estadisticas = useCase.obtenerEstadisticasDiarias();
+        return ResponseEntity.ok(estadisticas);
+    }
+
     @PostMapping("/{id}/rechazar")
     public ResponseEntity<PagoDTO> rechazarPago(@PathVariable Long id) {
         var pagoRechazado = useCase.rechazar(id);

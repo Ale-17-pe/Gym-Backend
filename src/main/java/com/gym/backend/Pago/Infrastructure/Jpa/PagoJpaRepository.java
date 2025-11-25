@@ -14,9 +14,12 @@ import java.util.Optional;
 
 public interface PagoJpaRepository extends JpaRepository<PagoEntity, Long> {
     List<PagoEntity> findByUsuarioId(Long usuarioId);
+
     Page<PagoEntity> findByUsuarioId(Long usuarioId, Pageable pageable);
 
     List<PagoEntity> findByEstado(EstadoPago estado);
+
+    Long countByEstado(EstadoPago estado);
 
     Optional<PagoEntity> findByReferencia(String referencia);
 
@@ -27,11 +30,11 @@ public interface PagoJpaRepository extends JpaRepository<PagoEntity, Long> {
 
     @Query("SELECT COALESCE(SUM(p.monto), 0) FROM PagoEntity p WHERE p.estado = :estado AND p.fechaCreacion BETWEEN :fechaInicio AND :fechaFin")
     Double sumMontoByEstadoAndFechaCreacionBetween(@Param("estado") EstadoPago estado,
-                                                   @Param("fechaInicio") LocalDateTime fechaInicio,
-                                                   @Param("fechaFin") LocalDateTime fechaFin);
+            @Param("fechaInicio") LocalDateTime fechaInicio,
+            @Param("fechaFin") LocalDateTime fechaFin);
 
     @Query("SELECT COUNT(p) FROM PagoEntity p WHERE p.estado = :estado AND p.fechaCreacion BETWEEN :fechaInicio AND :fechaFin")
     Long countByEstadoAndFechaCreacionBetween(@Param("estado") EstadoPago estado,
-                                              @Param("fechaInicio") LocalDateTime fechaInicio,
-                                              @Param("fechaFin") LocalDateTime fechaFin);
+            @Param("fechaInicio") LocalDateTime fechaInicio,
+            @Param("fechaFin") LocalDateTime fechaFin);
 }

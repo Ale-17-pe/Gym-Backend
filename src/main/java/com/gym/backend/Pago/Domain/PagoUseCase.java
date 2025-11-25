@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -163,6 +164,20 @@ public class PagoUseCase {
         Long rechazados = repo.contarPagosPorEstadoYFecha(EstadoPago.RECHAZADO, inicio, fin);
 
         return new EstadisticasMensual(año, mes, ingresos, confirmados, pendientes, rechazados);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> obtenerEstadisticasDiarias() {
+        LocalDateTime hoy = LocalDateTime.now().toLocalDate().atStartOfDay();
+        LocalDateTime finHoy = hoy.plusDays(1).minusSeconds(1);
+        Double ingresosHoy = repo.obtenerIngresosTotalesPorFecha(hoy, finHoy);
+        Long pagosPendientes = repo.contarPagosPorEstado(EstadoPago.PENDIENTE);
+        Long pagosConfirmadosHoy = repo.contarPagosPorEstadoYFecha(EstadoPago.CONFIRMADO, hoy, finHoy);
+        return Map.of(
+                "ingresosHoy", ingresosHoy != null ? ingresosHoy : 0.0,
+                "pagosPendientes", pagosPendientes != null ? pagosPendientes : 0L,
+                "pagosConfirmadosHoy", pagosConfirmadosHoy != null ? pagosConfirmadosHoy : 0L,
+                "fechaConsulta", LocalDateTime.now());
     }
 
     public record EstadisticasMensual(int año, int mes, Double ingresosTotales,
