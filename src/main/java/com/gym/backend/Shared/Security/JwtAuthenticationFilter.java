@@ -27,11 +27,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final UsuarioUseCase usuarioUseCase;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
         final String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response); return;
+            filterChain.doFilter(request, response);
+            return;
         }
 
         final String token = authHeader.substring(7);
@@ -62,13 +64,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         } catch (ExpiredJwtException e) {
             log.warn("Token expirado para usuario: {}", e.getClaims().getSubject());
-            sendErrorResponse(response, "Token expirado", HttpServletResponse.SC_UNAUTHORIZED); return;
+            sendErrorResponse(response, "Token expirado", HttpServletResponse.SC_UNAUTHORIZED);
+            return;
         } catch (JwtException e) {
             log.warn("Token JWT inválido: {}", e.getMessage());
-            sendErrorResponse(response, "Token inválido", HttpServletResponse.SC_UNAUTHORIZED); return;
+            sendErrorResponse(response, "Token inválido", HttpServletResponse.SC_UNAUTHORIZED);
+            return;
         } catch (Exception e) {
+            System.err.println("❌❌❌ ERROR CRÍTICO EN FILTRO JWT ❌❌❌");
+            e.printStackTrace(); // Imprimir stacktrace completo en consola
             log.error("Error en filtro JWT", e);
-            sendErrorResponse(response, "Error de autenticación", HttpServletResponse.SC_INTERNAL_SERVER_ERROR); return;
+            sendErrorResponse(response, "Error de autenticación: " + e.getMessage(),
+                    HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            return;
         }
 
         filterChain.doFilter(request, response);

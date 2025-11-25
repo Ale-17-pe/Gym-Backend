@@ -4,6 +4,7 @@ import com.gym.backend.Membresias.Domain.Enum.EstadoMembresia;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 public class MembresiaDTO {
@@ -16,4 +17,9 @@ public class MembresiaDTO {
     private EstadoMembresia estado;
     private LocalDate fechaCreacion;
     private LocalDate fechaActualizacion;
+
+    // Campos para acceso al gimnasio
+    private String codigoAcceso;
+    private LocalDateTime codigoExpiracion;
+    private String qrBase64; // QR codificado en base64 para mostrar en frontend
 }

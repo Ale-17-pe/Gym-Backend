@@ -6,7 +6,6 @@ import com.gym.backend.Usuarios.Application.Dto.UsuarioResponse;
 import com.gym.backend.Usuarios.Application.Mapper.UsuarioMapper;
 import com.gym.backend.Usuarios.Domain.Enum.Genero;
 import com.gym.backend.Usuarios.Domain.Enum.Rol;
-import com.gym.backend.Usuarios.Domain.Usuario;
 import com.gym.backend.Usuarios.Domain.UsuarioUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -76,7 +75,7 @@ public class UsuarioController {
 
     @PutMapping("/{id}")
     public ResponseEntity<UsuarioResponse> actualizar(@PathVariable Long id,
-                                                      @RequestBody ActualizarUsuarioRequest request) {
+            @RequestBody ActualizarUsuarioRequest request) {
         log.info("Actualizando usuario ID: {}", id);
         var actualizado = useCase.actualizar(id, request);
         return ResponseEntity.ok(mapper.toResponse(actualizado));

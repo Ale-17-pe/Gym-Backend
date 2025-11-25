@@ -1,6 +1,5 @@
 package com.gym.backend.Usuarios.Domain;
 
-
 import com.gym.backend.Usuarios.Application.Dto.ActualizarUsuarioRequest;
 import com.gym.backend.Usuarios.Domain.Enum.Genero;
 import com.gym.backend.Usuarios.Domain.Enum.Rol;
@@ -16,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -47,6 +47,7 @@ public class UsuarioUseCase {
         existente.setGenero(request.getGenero());
         existente.setTelefono(request.getTelefono());
         existente.setDireccion(request.getDireccion());
+        existente.setFechaNacimiento(request.getFechaNacimiento());
 
         if (request.getRol() != null) {
             existente.setRol(Rol.valueOf(request.getRol().toUpperCase()));

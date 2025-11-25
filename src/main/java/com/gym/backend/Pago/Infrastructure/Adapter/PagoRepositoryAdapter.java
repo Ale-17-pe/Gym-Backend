@@ -95,6 +95,7 @@ public class PagoRepositoryAdapter implements PagoRepositoryPort {
         entity.setEstado(domain.getEstado());
         entity.setFechaPago(domain.getFechaPago());
         entity.setReferencia(domain.getReferencia());
+        entity.setCodigoPago(domain.getCodigoPago());
         entity.setFechaActualizacion(domain.getFechaActualizacion());
     }
 
@@ -107,6 +108,7 @@ public class PagoRepositoryAdapter implements PagoRepositoryPort {
                 .estado(entity.getEstado())
                 .metodoPago(entity.getMetodoPago())
                 .referencia(entity.getReferencia())
+                .codigoPago(entity.getCodigoPago())
                 .fechaCreacion(entity.getFechaCreacion())
                 .fechaPago(entity.getFechaPago())
                 .fechaActualizacion(entity.getFechaActualizacion())
@@ -122,6 +124,7 @@ public class PagoRepositoryAdapter implements PagoRepositoryPort {
                 .estado(domain.getEstado())
                 .metodoPago(domain.getMetodoPago())
                 .referencia(domain.getReferencia())
+                .codigoPago(domain.getCodigoPago())
                 .fechaCreacion(domain.getFechaCreacion())
                 .fechaPago(domain.getFechaPago())
                 .fechaActualizacion(domain.getFechaActualizacion())

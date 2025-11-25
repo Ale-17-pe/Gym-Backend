@@ -43,7 +43,7 @@ public class UsuarioEntity {
     @Column(length = 255)
     private String direccion;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false)
     private String password;
 
     @Enumerated(EnumType.STRING)
@@ -53,17 +53,23 @@ public class UsuarioEntity {
     @Column(nullable = false)
     private Boolean activo;
 
-    @Column(nullable = false)
+    @Column(name = "fecha_nacimiento")
+    private java.time.LocalDate fechaNacimiento;
+
+    @Column(name = "fecha_creacion", updatable = false)
     private LocalDateTime fechaCreacion;
 
+    @Column(name = "fecha_actualizacion")
     private LocalDateTime fechaActualizacion;
 
     @PrePersist
     protected void onCreate() {
         fechaCreacion = LocalDateTime.now();
         fechaActualizacion = LocalDateTime.now();
-        if (activo == null) activo = true;
-        if (genero == null) genero = Genero.PREFIERO_NO_DECIR;
+        if (activo == null)
+            activo = true;
+        if (genero == null)
+            genero = Genero.PREFIERO_NO_DECIR;
     }
 
     @PreUpdate

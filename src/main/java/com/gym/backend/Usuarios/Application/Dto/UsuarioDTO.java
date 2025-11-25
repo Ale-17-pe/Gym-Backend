@@ -16,4 +16,5 @@ public class UsuarioDTO {
     private String direccion;
     private String rol;
     private Boolean activo;
+    private java.time.LocalDate fechaNacimiento;
 }

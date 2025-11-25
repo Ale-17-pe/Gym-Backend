@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
+
 @Component
 @RequiredArgsConstructor
 public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
@@ -92,6 +93,7 @@ public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
         entity.setDireccion(domain.getDireccion());
         entity.setRol(domain.getRol());
         entity.setActivo(domain.getActivo());
+        entity.setFechaNacimiento(domain.getFechaNacimiento());
 
         if (domain.getPassword() != null && !domain.getPassword().trim().isEmpty()) {
             entity.setPassword(domain.getPassword());
@@ -111,6 +113,7 @@ public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
                 .password(entity.getPassword())
                 .rol(entity.getRol())
                 .activo(entity.getActivo())
+                .fechaNacimiento(entity.getFechaNacimiento())
                 .build();
     }
 
@@ -127,6 +130,7 @@ public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
                 .password(domain.getPassword())
                 .rol(domain.getRol())
                 .activo(domain.getActivo())
+                .fechaNacimiento(domain.getFechaNacimiento())
                 .build();
     }
 }

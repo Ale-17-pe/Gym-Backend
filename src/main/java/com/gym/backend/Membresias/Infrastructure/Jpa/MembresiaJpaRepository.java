@@ -14,9 +14,11 @@ import java.util.Optional;
 
 public interface MembresiaJpaRepository extends JpaRepository<MembresiaEntity, Long> {
     List<MembresiaEntity> findByUsuarioId(Long usuarioId);
+
     Page<MembresiaEntity> findByUsuarioId(Long usuarioId, Pageable pageable);
 
     List<MembresiaEntity> findByEstado(EstadoMembresia estado);
+
     Page<MembresiaEntity> findByEstado(EstadoMembresia estado, Pageable pageable);
 
     List<MembresiaEntity> findByFechaInicioBetween(LocalDate fechaInicio, LocalDate fechaFin);
@@ -31,5 +33,8 @@ public interface MembresiaJpaRepository extends JpaRepository<MembresiaEntity, L
     Long countPorVencer();
 
     Long countByEstado(EstadoMembresia estado);
+
     Long countByUsuarioId(Long usuarioId);
+
+    Optional<MembresiaEntity> findByCodigoAcceso(String codigoAcceso);
 }

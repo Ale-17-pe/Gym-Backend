@@ -18,4 +18,5 @@ public class PagoResponse {
     private LocalDateTime fechaCreacion;
     private LocalDateTime fechaPago;
     private String codigoPago;
+    private String codigoQr; // QR en base64
 }

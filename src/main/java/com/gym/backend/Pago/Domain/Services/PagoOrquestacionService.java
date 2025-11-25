@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Slf4j
 @Service
@@ -39,10 +40,8 @@ public class PagoOrquestacionService {
         log.info("Iniciando proceso de pago para usuario: {}, plan: {}", request.getUsuarioId(), request.getPlanId());
 
         try {
-            // Validaciones más robustas
             validarPrecondicionesPago(request);
 
-            // Crear pago
             Pago pago = pagoMapper.toDomainFromCreateRequest(request);
             Pago pagoRegistrado = pagoUseCase.registrar(pago);
 
@@ -53,13 +52,14 @@ public class PagoOrquestacionService {
                     pagoRegistrado.getMonto(),
                     null,
                     "PENDIENTE",
-                    "Pago iniciado"
-            );
+                    "Pago iniciado");
 
-            // Generar código de pago
             PaymentCode paymentCode = paymentCodeUseCase.generarParaPago(pagoRegistrado.getId());
+            pagoUseCase.asignarCodigo(pagoRegistrado.getId(), paymentCode.getCodigo());
+            pagoRegistrado.setCodigoPago(paymentCode.getCodigo());
 
-            log.info("Proceso de pago iniciado - Pago ID: {}, Código: {}", pagoRegistrado.getId(), paymentCode.getCodigo());
+            log.info("Proceso de pago iniciado - Pago ID: {}, Código: {}", pagoRegistrado.getId(),
+                    paymentCode.getCodigo());
 
             return ProcesoPagoResponse.builder()
                     .pago(pagoRegistrado)
@@ -73,17 +73,48 @@ public class PagoOrquestacionService {
     }
 
     private void validarPrecondicionesPago(CrearPagoRequest request) {
-        // Validar que el usuario existe y está activo
         var usuario = usuarioUseCase.obtener(request.getUsuarioId());
         usuarioUseCase.verificarUsuarioActivo(usuario.getId());
 
-        // Validar que el plan existe y está activo
         Plan plan = planUseCase.obtener(request.getPlanId());
-        if (!plan.esActivo()) {throw new IllegalStateException("El plan no está activo");}
+        if (!plan.esActivo()) {
+            throw new IllegalStateException("El plan no está activo");
+        }
 
-        // Validar que el monto coincide con el precio del plan
         if (!request.getMonto().equals(plan.getPrecio())) {
-            throw new IllegalStateException("El monto no coincide con el precio del plan");}
+            throw new IllegalStateException("El monto no coincide con el precio del plan");
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public InfoPagoResponse obtenerInfoPagoPorCodigo(String codigoPago) {
+        log.info("Obteniendo información del pago con código: {}", codigoPago);
+
+        try {
+            PaymentCode paymentCode = paymentCodeUseCase.validarCodigo(codigoPago);
+            Pago pago = pagoUseCase.obtener(paymentCode.getPagoId());
+            Plan plan = planUseCase.obtener(pago.getPlanId());
+            var usuario = usuarioUseCase.obtener(pago.getUsuarioId());
+
+            return InfoPagoResponse.builder()
+                    .pagoId(pago.getId())
+                    .usuarioId(pago.getUsuarioId())
+                    .usuarioNombre(usuario.getNombre() + " " + usuario.getApellido())
+                    .planId(pago.getPlanId())
+                    .planNombre(plan.getNombrePlan())
+                    .planDuracion(plan.getDuracionDias())
+                    .monto(pago.getMonto())
+                    .metodoPago(pago.getMetodoPago().name())
+                    .estado(pago.getEstado().name())
+                    .codigoPago(codigoPago)
+                    .fechaCreacion(pago.getFechaCreacion())
+                    .fechaVencimiento(paymentCode.getFechaExpiracion())
+                    .build();
+
+        } catch (Exception e) {
+            log.error("Error al obtener información del pago: {}", e.getMessage(), e);
+            throw e;
+        }
     }
 
     @Transactional
@@ -91,14 +122,10 @@ public class PagoOrquestacionService {
         log.info("Confirmando pago con código: {}", codigoPago);
 
         try {
-            // Validar código
             PaymentCode paymentCode = paymentCodeUseCase.validarCodigo(codigoPago);
-
-            // Obtener y confirmar pago
             Pago pago = pagoUseCase.obtener(paymentCode.getPagoId());
             Pago pagoConfirmado = pagoUseCase.confirmar(pago.getId());
 
-            // Marcar código como usado
             paymentCodeUseCase.marcarComoUsado(paymentCode.getId());
 
             historialPago.registrarCambioAutomatico(
@@ -108,13 +135,12 @@ public class PagoOrquestacionService {
                     pagoConfirmado.getMonto(),
                     pago.getEstado().name(),
                     "CONFIRMADO",
-                    "Confirmación de pago"
-            );
+                    "Confirmación de pago");
 
-            // Crear/actualizar membresía
             crearOActualizarMembresia(pagoConfirmado);
 
-            log.info("Pago confirmado exitosamente - Pago ID: {}, Usuario: {}", pagoConfirmado.getId(), pagoConfirmado.getUsuarioId());
+            log.info("Pago confirmado exitosamente - Pago ID: {}, Usuario: {}", pagoConfirmado.getId(),
+                    pagoConfirmado.getUsuarioId());
 
             return pagoConfirmado;
 
@@ -126,17 +152,12 @@ public class PagoOrquestacionService {
 
     private void crearOActualizarMembresia(Pago pago) {
         Plan plan = planUseCase.obtener(pago.getPlanId());
-
-        // Verificar membresía existente
         Membresia membresiaExistente = membresiaUseCase.obtenerActivaPorUsuario(pago.getUsuarioId());
 
         if (membresiaExistente != null) {
-            // Extender membresía existente
             membresiaUseCase.extender(membresiaExistente.getId(), plan.getDuracionDias());
-
             log.info("Membresía extendida para usuario: {}", pago.getUsuarioId());
         } else {
-            // Crear nueva membresía
             Membresia nuevaMembresia = Membresia.builder()
                     .usuarioId(pago.getUsuarioId())
                     .planId(pago.getPlanId())
@@ -158,5 +179,22 @@ public class PagoOrquestacionService {
     public static class ProcesoPagoResponse {
         private final Pago pago;
         private final PaymentCode paymentCode;
+    }
+
+    @Getter
+    @Builder
+    public static class InfoPagoResponse {
+        private final Long pagoId;
+        private final Long usuarioId;
+        private final String usuarioNombre;
+        private final Long planId;
+        private final String planNombre;
+        private final Integer planDuracion;
+        private final Double monto;
+        private final String metodoPago;
+        private final String estado;
+        private final String codigoPago;
+        private final LocalDateTime fechaCreacion;
+        private final LocalDateTime fechaVencimiento;
     }
 }

@@ -7,8 +7,6 @@ import com.gym.backend.Pago.Domain.Exceptions.PagoNotFoundException;
 import com.gym.backend.Pago.Domain.Exceptions.PagoValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -74,8 +72,7 @@ public class PagoUseCase {
                 pago.getMonto(),
                 estadoAnterior,
                 "CONFIRMADO",
-                "Confirmación manual/adaptador"
-        );
+                "Confirmación manual/adaptador");
         return actualizado;
     }
 
@@ -96,6 +93,12 @@ public class PagoUseCase {
 
         pago.cancelar();
         return repo.actualizar(pago);
+    }
+
+    public void asignarCodigo(Long pagoId, String codigo) {
+        Pago pago = obtener(pagoId);
+        pago.setCodigoPago(codigo);
+        repo.actualizar(pago);
     }
 
     @Transactional(readOnly = true)
@@ -163,6 +166,7 @@ public class PagoUseCase {
     }
 
     public record EstadisticasMensual(int año, int mes, Double ingresosTotales,
-                                      Long pagosConfirmados, Long pagosPendientes,
-                                      Long pagosRechazados) {}
+            Long pagosConfirmados, Long pagosPendientes,
+            Long pagosRechazados) {
+    }
 }

@@ -25,14 +25,9 @@ public class Usuario {
     private String password;
     private Rol rol;
     private Boolean activo;
+    private java.time.LocalDate fechaNacimiento;
 
     public void validar() {
-        if (email == null || !email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
-            throw new UsuarioValidationException("Email inválido");
-        }
-        if (dni == null || !dni.matches("\\d{8,15}")) {
-            throw new UsuarioValidationException("DNI debe contener solo números y tener entre 8-15 dígitos");
-        }
         if (nombre == null || nombre.trim().isEmpty()) {
             throw new UsuarioValidationException("Nombre es requerido");
         }
@@ -52,7 +47,7 @@ public class Usuario {
     }
 
     public boolean esActivo() {
-        return activo != null && activo;
+        return Boolean.TRUE.equals(activo);
     }
 
     public String getNombreCompleto() {

@@ -4,4 +4,8 @@ public class MembresiaNotFoundException extends MembresiaException {
     public MembresiaNotFoundException(Long id) {
         super("Membresía con ID " + id + " no encontrada", "MEMBRESIA_NOT_FOUND");
     }
+
+    public MembresiaNotFoundException(String message) {
+        super(message, "MEMBRESIA_NOT_FOUND");
+    }
 }

@@ -105,11 +105,18 @@ public class MembresiaRepositoryAdapter implements MembresiaRepositoryPort {
         return jpa.countByUsuarioId(usuarioId);
     }
 
+    @Override
+    public Optional<Membresia> buscarPorCodigoAcceso(String codigoAcceso) {
+        return jpa.findByCodigoAcceso(codigoAcceso).map(this::toDomain);
+    }
+
     private void actualizarEntityDesdeDomain(MembresiaEntity entity, Membresia domain) {
         entity.setFechaInicio(domain.getFechaInicio());
         entity.setFechaFin(domain.getFechaFin());
         entity.setEstado(domain.getEstado());
         entity.setFechaActualizacion(domain.getFechaActualizacion());
+        entity.setCodigoAcceso(domain.getCodigoAcceso());
+        entity.setCodigoExpiracion(domain.getCodigoExpiracion());
     }
 
     private Membresia toDomain(MembresiaEntity entity) {
@@ -123,6 +130,8 @@ public class MembresiaRepositoryAdapter implements MembresiaRepositoryPort {
                 .estado(entity.getEstado())
                 .fechaCreacion(entity.getFechaCreacion())
                 .fechaActualizacion(entity.getFechaActualizacion())
+                .codigoAcceso(entity.getCodigoAcceso())
+                .codigoExpiracion(entity.getCodigoExpiracion())
                 .build();
     }
 
@@ -137,6 +146,8 @@ public class MembresiaRepositoryAdapter implements MembresiaRepositoryPort {
                 .estado(domain.getEstado())
                 .fechaCreacion(domain.getFechaCreacion())
                 .fechaActualizacion(domain.getFechaActualizacion())
+                .codigoAcceso(domain.getCodigoAcceso())
+                .codigoExpiracion(domain.getCodigoExpiracion())
                 .build();
     }
 }

@@ -14,6 +14,7 @@ public interface PagoMapper {
         PagoEntity toEntity(Pago domain);
 
         @Mapping(target = "fechaPago", source = "fechaPago")
+        @Mapping(target = "fechaVencimiento", ignore = true)
         PagoDTO toDTO(Pago domain);
 
         @Mappings({
@@ -27,4 +28,11 @@ public interface PagoMapper {
         Pago toDomainFromCreateRequest(CrearPagoRequest request);
 
         PagoResponse toResponse(Pago domain);
+
+        @AfterMapping
+        default void calculateFechaVencimiento(Pago domain, @MappingTarget PagoDTO dto) {
+                if (domain.getFechaCreacion() != null) {
+                        dto.setFechaVencimiento(domain.getFechaCreacion().plusHours(24));
+                }
+        }
 }

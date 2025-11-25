@@ -6,15 +6,13 @@ import com.gym.backend.Membresias.Domain.Exceptions.MembresiaNotFoundException;
 import com.gym.backend.Membresias.Domain.Exceptions.MembresiaValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -25,7 +23,6 @@ import java.util.Map;
 public class MembresiaUseCase {
     private final MembresiaRepositoryPort repo;
     private final HistorialMembresiaUseCase historialMembresiaUseCase;
-
 
     public Membresia crear(Membresia membresia) {
         log.info("Creando nueva membresía - Usuario: {}, Plan: {}",
@@ -55,8 +52,7 @@ public class MembresiaUseCase {
                 "CREAR",
                 null,
                 "ACTIVA",
-                "Creación de membresía por pago"
-        );
+                "Creación de membresía por pago");
 
         return guardada;
     }
@@ -77,8 +73,7 @@ public class MembresiaUseCase {
                 "EXTENDER",
                 fechaAnterior.toString(),
                 m.getFechaFin().toString(),
-                "Extensión automática por nuevo pago"
-        );
+                "Extensión automática por nuevo pago");
 
         return actualizada;
     }
@@ -201,12 +196,75 @@ public class MembresiaUseCase {
                 "membresiasActivas", membresiasActivas,
                 "membresiasPorVencer", membresiasPorVencer,
                 "membresiasVencidas", membresiasVencidas,
-                "tasaActivas", totalMembresias > 0 ? (double) membresiasActivas / totalMembresias * 100 : 0
-        );
+                "tasaActivas", totalMembresias > 0 ? (double) membresiasActivas / totalMembresias * 100 : 0);
     }
 
     @Transactional(readOnly = true)
     public List<Membresia> buscarPorRangoFechas(LocalDate fechaInicio, LocalDate fechaFin) {
         return repo.buscarPorRangoFechas(fechaInicio, fechaFin);
+    }
+
+    /**
+     * Genera un código de acceso temporal para una membresía
+     * El código expira en 5 minutos
+     */
+    @Transactional
+    public Membresia generarCodigoAcceso(Long membresiaId) {
+        log.info("Generando código de acceso para membresía ID: {}", membresiaId);
+
+        Membresia membresia = obtener(membresiaId);
+
+        if (!membresia.estaActiva()) {
+            throw new MembresiaValidationException("Solo se puede generar código de acceso para membresías activas");
+        }
+
+        // Generar código único formato: MEM-{ID}-{RANDOM}
+        String codigo = generarCodigoUnico(membresiaId);
+        membresia.setCodigoAcceso(codigo);
+        membresia.setCodigoExpiracion(LocalDateTime.now().plusMinutes(5));
+
+        Membresia actualizada = repo.actualizar(membresia);
+        log.info("Código de acceso generado: {} para membresía ID: {}", codigo, membresiaId);
+
+        return actualizada;
+    }
+
+    /**
+     * Genera un código único para acceso
+     */
+    private String generarCodigoUnico(Long membresiaId) {
+        String randomPart = java.util.UUID.randomUUID().toString()
+                .replace("-", "")
+                .substring(0, 6)
+                .toUpperCase();
+        return String.format("MEM-%d-%s", membresiaId, randomPart);
+    }
+
+    /**
+     * Valida un código de acceso y lo invalida después del uso
+     */
+    @Transactional
+    public Membresia validarCodigoAcceso(String codigo) {
+        log.info("Validando código de acceso: {}", codigo);
+
+        Membresia membresia = repo.buscarPorCodigoAcceso(codigo)
+                .orElseThrow(() -> new MembresiaNotFoundException("Código de acceso inválido"));
+
+        if (membresia.getCodigoExpiracion() == null ||
+                LocalDateTime.now().isAfter(membresia.getCodigoExpiracion())) {
+            throw new MembresiaValidationException("El código de acceso ha expirado. Genera uno nuevo.");
+        }
+
+        if (!membresia.estaActiva()) {
+            throw new MembresiaValidationException("La membresía no está activa");
+        }
+
+        // Invalidar el código después de su uso
+        membresia.setCodigoAcceso(null);
+        membresia.setCodigoExpiracion(null);
+        repo.actualizar(membresia);
+
+        log.info("Código de acceso validado exitosamente para membresía ID: {}", membresia.getId());
+        return membresia;
     }
 }
