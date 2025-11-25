@@ -2,18 +2,13 @@ package com.gym.backend.Asistencias.Domain;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Map;
+import java.time.*;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -152,7 +147,8 @@ public class AsistenciaUseCase {
 
         boolean tieneEntrada = repo.existeEntradaHoy(usuarioId, hoyInicio, hoyFin);
         boolean tieneSalida = repo.existeSalidaHoy(usuarioId, hoyInicio, hoyFin);
-        int totalAsistenciasMes = repo.contarAsistenciasMes(usuarioId, LocalDate.now().getYear(), LocalDate.now().getMonthValue());
+        int totalAsistenciasMes = repo.contarAsistenciasMes(usuarioId, LocalDate.now().getYear(),
+                LocalDate.now().getMonthValue());
 
         return new AsistenciaEstado(usuarioId, tieneEntrada, tieneSalida, totalAsistenciasMes);
     }
@@ -169,8 +165,7 @@ public class AsistenciaUseCase {
                 "asistenciasHoy", asistenciasHoy,
                 "usuariosActivosHoy", usuariosActivosHoy,
                 "promedioMensual", promedioMensual,
-                "fechaConsulta", LocalDateTime.now()
-        );
+                "fechaConsulta", LocalDateTime.now());
     }
 
     @Transactional(readOnly = true)
@@ -184,14 +179,13 @@ public class AsistenciaUseCase {
                 "totalSalidas", totalSalidas,
                 "usuariosUnicos", usuariosUnicos,
                 "año", (long) año,
-                "mes", (long) mes
-        );
+                "mes", (long) mes);
     }
 
     private void validarHorarioGimnasio(LocalDateTime fechaHora) {
         LocalTime hora = fechaHora.toLocalTime();
         LocalTime apertura = LocalTime.of(5, 0); // 5:00 AM
-        LocalTime cierre = LocalTime.of(23, 0);  // 11:00 PM
+        LocalTime cierre = LocalTime.of(23, 0); // 11:00 PM
 
         if (hora.isBefore(apertura) || hora.isAfter(cierre)) {
             throw new IllegalStateException("El gimnasio está cerrado. Horario: " + apertura + " - " + cierre);
@@ -199,5 +193,6 @@ public class AsistenciaUseCase {
     }
 
     public record AsistenciaEstado(Long usuarioId, boolean tieneEntradaHoy,
-                                   boolean tieneSalidaHoy, int totalAsistenciasMes) {}
+            boolean tieneSalidaHoy, int totalAsistenciasMes) {
+    }
 }

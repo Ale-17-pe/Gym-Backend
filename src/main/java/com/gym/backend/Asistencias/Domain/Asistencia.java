@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 @Builder
 @AllArgsConstructor
 public class Asistencia {
+    // Atributos
     private Long id;
     private Long usuarioId;
     private Long membresiaId; // Nueva relación con membresía

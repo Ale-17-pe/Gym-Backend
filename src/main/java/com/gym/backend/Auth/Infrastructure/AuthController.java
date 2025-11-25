@@ -1,20 +1,12 @@
 package com.gym.backend.Auth.Infrastructure;
 
-import com.gym.backend.Auth.Domain.AuthResponse;
-import com.gym.backend.Auth.Domain.AuthUseCase;
-import com.gym.backend.Auth.Domain.LoginCommand;
-import com.gym.backend.Auth.Domain.RegisterCommand;
-import com.gym.backend.Usuarios.Domain.Exceptions.UsuarioDuplicateException;
-import com.gym.backend.Usuarios.Domain.Exceptions.UsuarioInactiveException;
-import com.gym.backend.Usuarios.Domain.Exceptions.UsuarioNotFoundException;
-import com.gym.backend.Usuarios.Domain.Exceptions.UsuarioValidationException;
+import com.gym.backend.Auth.Domain.*;
+import com.gym.backend.Usuarios.Domain.Exceptions.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
-
 
 @Slf4j
 @RestController
@@ -81,6 +73,9 @@ public class AuthController {
         return ResponseEntity.ok().body(new MessageResponse("Refresh token no implementado"));
     }
 
-    public record ErrorResponse(String message) {}
-    public record MessageResponse(String message) {}
+    public record ErrorResponse(String message) {
+    }
+
+    public record MessageResponse(String message) {
+    }
 }

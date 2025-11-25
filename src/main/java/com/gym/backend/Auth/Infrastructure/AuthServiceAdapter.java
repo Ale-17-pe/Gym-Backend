@@ -7,13 +7,8 @@ import com.gym.backend.Auth.Domain.RegisterCommand;
 import com.gym.backend.Shared.Security.JwtService;
 import com.gym.backend.Usuarios.Domain.Enum.Genero;
 import com.gym.backend.Usuarios.Domain.Enum.Rol;
-import com.gym.backend.Usuarios.Domain.Exceptions.UsuarioDuplicateException;
-import com.gym.backend.Usuarios.Domain.Exceptions.UsuarioInactiveException;
-import com.gym.backend.Usuarios.Domain.Exceptions.UsuarioNotFoundException;
-import com.gym.backend.Usuarios.Domain.Exceptions.UsuarioValidationException;
-import com.gym.backend.Usuarios.Domain.Usuario;
-import com.gym.backend.Usuarios.Domain.UsuarioUseCase;
-import com.gym.backend.Usuarios.Infrastructure.Adapter.UsuarioRepositoryAdapter;
+import com.gym.backend.Usuarios.Domain.Exceptions.*;
+import com.gym.backend.Usuarios.Domain.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -67,8 +62,7 @@ public class AuthServiceAdapter implements AuthServicePort {
                 usuario.getGenero().name(),
                 usuario.getActivo(),
                 expiracion,
-                LocalDateTime.now()
-        );
+                LocalDateTime.now());
     }
 
     @Override
@@ -76,9 +70,8 @@ public class AuthServiceAdapter implements AuthServicePort {
         log.info("Registrando nuevo usuario: {}", command.email());
 
         try {
-            Genero genero = command.genero() != null ?
-                    Genero.valueOf(command.genero().toUpperCase()) :
-                    Genero.PREFIERO_NO_DECIR;
+            Genero genero = command.genero() != null ? Genero.valueOf(command.genero().toUpperCase())
+                    : Genero.PREFIERO_NO_DECIR;
 
             Rol rol = validarYAsignarRol(command.rol());
 
@@ -112,8 +105,7 @@ public class AuthServiceAdapter implements AuthServicePort {
                     usuarioCreado.getGenero().name(),
                     usuarioCreado.getActivo(),
                     expiracion,
-                    LocalDateTime.now()
-            );
+                    LocalDateTime.now());
 
         } catch (UsuarioDuplicateException e) {
             log.warn("Registro fallido - {}: {}", e.getCode(), e.getMessage());
@@ -144,9 +136,11 @@ public class AuthServiceAdapter implements AuthServicePort {
     }
 
     private Rol validarYAsignarRol(String rol) {
-        if (rol == null || rol.isBlank()) return Rol.CLIENTE;
-        try { return Rol.valueOf(rol.toUpperCase()); }
-        catch (IllegalArgumentException e) {
+        if (rol == null || rol.isBlank())
+            return Rol.CLIENTE;
+        try {
+            return Rol.valueOf(rol.toUpperCase());
+        } catch (IllegalArgumentException e) {
             log.warn("Rol no válido: {}, asignando CLIENTE por defecto", rol);
             return Rol.CLIENTE;
         }

@@ -1,8 +1,6 @@
 package com.gym.backend.HistorialMembresias.Application.Dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Data
 @NoArgsConstructor

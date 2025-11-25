@@ -1,23 +1,17 @@
 package com.gym.backend.Asistencias.Infrastructure.Controller;
 
-import com.gym.backend.Asistencias.Application.Dto.AsistenciaDTO;
 import com.gym.backend.Asistencias.Application.Dto.AsistenciaResponse;
 import com.gym.backend.Asistencias.Application.Mapper.AsistenciaMapper;
 import com.gym.backend.Asistencias.Domain.AsistenciaUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
+import java.time.*;
+import java.util.*;
 
 @Slf4j
 @RestController

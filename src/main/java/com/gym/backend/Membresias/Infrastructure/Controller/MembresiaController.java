@@ -4,9 +4,9 @@ import com.gym.backend.Membresias.Application.Dto.CrearMembresiaRequest;
 import com.gym.backend.Membresias.Application.Dto.MembresiaResponse;
 import com.gym.backend.Membresias.Application.Dto.MembresiaDTO;
 import com.gym.backend.Membresias.Application.Mapper.MembresiaMapper;
-import com.gym.backend.Membresias.Domain.Enum.EstadoMembresia;
 import com.gym.backend.Membresias.Domain.MembresiaUseCase;
 import com.gym.backend.Qr.Domain.QrUseCase;
+import com.gym.backend.Asistencias.Domain.AsistenciaUseCase;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +30,7 @@ public class MembresiaController {
     private final MembresiaUseCase useCase;
     private final MembresiaMapper mapper;
     private final QrUseCase qrUseCase;
+    private final AsistenciaUseCase asistenciaUseCase;
 
     @PostMapping
     public ResponseEntity<MembresiaResponse> crear(@Valid @RequestBody CrearMembresiaRequest request) {
@@ -166,6 +167,15 @@ public class MembresiaController {
     public ResponseEntity<MembresiaResponse> validarAcceso(@RequestBody Map<String, String> body) {
         String codigo = body.get("codigo");
         var membresia = useCase.validarCodigoAcceso(codigo);
+
+        // Registrar asistencia automáticamente
+        try {
+            asistenciaUseCase.registrarEntrada(membresia.getUsuarioId());
+        } catch (Exception e) {
+            // Log pero no fallar la validación
+            log.warn("No se pudo registrar asistencia para usuario {}: {}", membresia.getUsuarioId(), e.getMessage());
+        }
+
         return ResponseEntity.ok(mapper.toResponse(membresia));
     }
 }

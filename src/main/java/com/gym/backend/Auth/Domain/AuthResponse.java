@@ -15,13 +15,11 @@ public record AuthResponse(
         String genero,
         Boolean activo,
 
-        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-        LocalDateTime expiracion,
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime expiracion,
 
-        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-        LocalDateTime fechaLogin
-) {
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime fechaLogin) {
     public AuthResponse {
-        if (fechaLogin == null) fechaLogin = LocalDateTime.now();
+        if (fechaLogin == null)
+            fechaLogin = LocalDateTime.now();
     }
 }
