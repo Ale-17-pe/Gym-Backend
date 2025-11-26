@@ -82,9 +82,21 @@ public class MembresiaUseCase {
         log.info("Suspender membresía ID: {}", membresiaId);
 
         Membresia membresia = obtener(membresiaId);
-        membresia.suspender();
+        String estadoAnterior = membresia.getEstado().name();
 
-        return repo.actualizar(membresia);
+        membresia.suspender();
+        Membresia actualizada = repo.actualizar(membresia);
+
+        historialMembresiaUseCase.registrarCambioAutomatico(
+                membresia.getId(),
+                membresia.getUsuarioId(),
+                membresia.getPlanId(),
+                "SUSPENDER",
+                estadoAnterior,
+                "SUSPENDIDA",
+                "Membresía suspendida");
+
+        return actualizada;
     }
 
     public Membresia reactivar(Long membresiaId) {
@@ -96,17 +108,41 @@ public class MembresiaUseCase {
             throw new MembresiaValidationException("No se puede reactivar una membresía vencida");
         }
 
+        String estadoAnterior = membresia.getEstado().name();
         membresia.activar();
-        return repo.actualizar(membresia);
+        Membresia actualizada = repo.actualizar(membresia);
+
+        historialMembresiaUseCase.registrarCambioAutomatico(
+                membresia.getId(),
+                membresia.getUsuarioId(),
+                membresia.getPlanId(),
+                "REACTIVAR",
+                estadoAnterior,
+                "ACTIVA",
+                "Membresía reactivada");
+
+        return actualizada;
     }
 
     public Membresia cancelar(Long membresiaId) {
         log.info("Cancelar membresía ID: {}", membresiaId);
 
         Membresia membresia = obtener(membresiaId);
-        membresia.cancelar();
+        String estadoAnterior = membresia.getEstado().name();
 
-        return repo.actualizar(membresia);
+        membresia.cancelar();
+        Membresia actualizada = repo.actualizar(membresia);
+
+        historialMembresiaUseCase.registrarCambioAutomatico(
+                membresia.getId(),
+                membresia.getUsuarioId(),
+                membresia.getPlanId(),
+                "CANCELAR",
+                estadoAnterior,
+                "CANCELADA",
+                "Membresía cancelada por solicitud del usuario");
+
+        return actualizada;
     }
 
     @Transactional(readOnly = true)
@@ -174,8 +210,19 @@ public class MembresiaUseCase {
 
         for (Membresia membresia : membresiasPorVencer) {
             if (membresia.estaVencida()) {
+                String estadoAnterior = membresia.getEstado().name();
                 membresia.vencer();
                 repo.actualizar(membresia);
+
+                historialMembresiaUseCase.registrarCambioAutomatico(
+                        membresia.getId(),
+                        membresia.getUsuarioId(),
+                        membresia.getPlanId(),
+                        "VENCER",
+                        estadoAnterior,
+                        "VENCIDA",
+                        "Membresía vencida automáticamente por tarea programada");
+
                 contador++;
                 log.info("Membresía ID: {} vencida automáticamente", membresia.getId());
             }
@@ -188,7 +235,6 @@ public class MembresiaUseCase {
     public Map<String, Object> obtenerEstadisticas() {
         Long totalMembresias = repo.contarTotal();
         Long membresiasActivas = repo.contarPorEstado(EstadoMembresia.ACTIVA);
-        Long membresiasPorVencer = 0L;
         Long membresiasVencidas = repo.contarPorEstado(EstadoMembresia.VENCIDA);
 
         return Map.of(
@@ -196,8 +242,7 @@ public class MembresiaUseCase {
                 "membresiasActivas", membresiasActivas != null ? membresiasActivas : 0L,
                 "membresiasVencidas", membresiasVencidas != null ? membresiasVencidas : 0L,
                 "tasaActivas", totalMembresias > 0 ? (double) membresiasActivas / totalMembresias * 100 : 0,
-                "planPopular", 0L // Añadir esta línea
-        );
+                "planPopular", 0L);
     }
 
     @Transactional(readOnly = true)

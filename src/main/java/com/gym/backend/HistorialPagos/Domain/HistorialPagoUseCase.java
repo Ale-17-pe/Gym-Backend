@@ -2,8 +2,6 @@ package com.gym.backend.HistorialPagos.Domain;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -56,7 +54,7 @@ public class HistorialPagoUseCase {
     }
 
     public HistorialPago registrarCambioAutomatico(Long pagoId, Long usuarioId, Long planId, Double monto,
-                                                   String estadoAnterior, String estadoNuevo, String motivo) {
+            String estadoAnterior, String estadoNuevo, String motivo) {
         HistorialPago historial = HistorialPago.builder()
                 .pagoId(pagoId)
                 .usuarioId(usuarioId)
@@ -134,8 +132,7 @@ public class HistorialPagoUseCase {
                 "confirmaciones", confirmaciones,
                 "rechazos", rechazos,
                 "cancelaciones", cancelaciones,
-                "fechaConsulta", LocalDateTime.now()
-        );
+                "fechaConsulta", LocalDateTime.now());
     }
 
     public Map<String, Long> obtenerEstadisticasPorMes(int año, int mes) {
@@ -147,8 +144,8 @@ public class HistorialPagoUseCase {
         map.put("totalCambios", totalCambios);
         map.put("confirmaciones", confirmaciones);
         map.put("rechazos", rechazos);
-        map.put("año", (long) año);  // 🔥 convertir int → Long
-        map.put("mes", (long) mes);  // 🔥 convertir int → Long
+        map.put("año", (long) año); // 🔥 convertir int → Long
+        map.put("mes", (long) mes); // 🔥 convertir int → Long
 
         return map;
     }

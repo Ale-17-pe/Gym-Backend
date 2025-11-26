@@ -2,7 +2,6 @@ package com.gym.backend.Shared.Security;
 
 import com.gym.backend.Usuarios.Domain.Exceptions.UsuarioNotFoundException;
 import com.gym.backend.Usuarios.Domain.UsuarioUseCase;
-import com.gym.backend.Usuarios.Infrastructure.Adapter.UsuarioRepositoryAdapter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.*;
@@ -27,8 +26,8 @@ public class CustomUserDetailsService implements UserDetailsService {
                 throw new UsernameNotFoundException("Usuario desactivado: " + email);
             }
 
-            String rol = usuario.getRol().name().startsWith("ROLE_") ?
-                    usuario.getRol().name() : "ROLE_" + usuario.getRol().name();
+            String rol = usuario.getRol().name().startsWith("ROLE_") ? usuario.getRol().name()
+                    : "ROLE_" + usuario.getRol().name();
 
             return User.builder()
                     .username(usuario.getEmail())

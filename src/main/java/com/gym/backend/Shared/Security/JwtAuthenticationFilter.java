@@ -71,7 +71,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             sendErrorResponse(response, "Token inválido", HttpServletResponse.SC_UNAUTHORIZED);
             return;
         } catch (Exception e) {
-            System.err.println("❌❌❌ ERROR CRÍTICO EN FILTRO JWT ❌❌❌");
             e.printStackTrace(); // Imprimir stacktrace completo en consola
             log.error("Error en filtro JWT", e);
             sendErrorResponse(response, "Error de autenticación: " + e.getMessage(),

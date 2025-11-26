@@ -50,6 +50,8 @@ public class WebSecurityConfig {
                                                                 "/api/planes/*")
                                                 .permitAll()
 
+                                                .requestMatchers("/api/comprobantes/**")
+                                                .hasAnyRole("RECEPCIONISTA", "ADMINISTRADOR")
                                                 // Endpoints de administrador (usuarios y configuración)
                                                 .requestMatchers("/api/usuarios/**", "/api/configuracion/**")
                                                 .hasRole("ADMINISTRADOR")

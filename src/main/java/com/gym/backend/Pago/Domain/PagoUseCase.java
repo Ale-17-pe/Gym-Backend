@@ -50,7 +50,19 @@ public class PagoUseCase {
                 .fechaActualizacion(LocalDateTime.now())
                 .build();
 
-        return repo.guardar(pagoParaGuardar);
+        Pago guardado = repo.guardar(pagoParaGuardar);
+
+        // Registrar creación del pago en historial
+        historialPago.registrarCambioAutomatico(
+                guardado.getId(),
+                guardado.getUsuarioId(),
+                guardado.getPlanId(),
+                guardado.getMonto(),
+                null, // No hay estado anterior (es la creación)
+                "PENDIENTE",
+                "Pago iniciado");
+
+        return guardado;
     }
 
     public Pago confirmar(Long pagoId) {
@@ -92,8 +104,20 @@ public class PagoUseCase {
             throw new PagoValidationException("Solo se pueden cancelar pagos pendientes");
         }
 
+        String estadoAnterior = pago.getEstado().name();
+
         pago.cancelar();
-        return repo.actualizar(pago);
+        Pago actualizado = repo.actualizar(pago);
+
+        historialPago.registrarCambioAutomatico(
+                pago.getId(),
+                pago.getUsuarioId(),
+                pago.getPlanId(),
+                pago.getMonto(),
+                estadoAnterior,
+                "CANCELADO",
+                "Cancelación solicitada por el usuario");
+        return actualizado;
     }
 
     public void asignarCodigo(Long pagoId, String codigo) {
