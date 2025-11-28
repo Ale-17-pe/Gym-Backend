@@ -6,8 +6,6 @@ import com.gym.backend.PaymentCode.Domain.Exceptions.PaymentCodeValidationExcept
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -206,12 +204,14 @@ public class PaymentCodeUseCase {
         } while (repo.buscarPorCodigo(codigo).isPresent() && intentos < maxIntentos);
 
         if (intentos >= maxIntentos) {
-            throw new PaymentCodeValidationException("No se pudo generar un código único después de " + maxIntentos + " intentos");
+            throw new PaymentCodeValidationException(
+                    "No se pudo generar un código único después de " + maxIntentos + " intentos");
         }
 
         return codigo;
     }
 
     public record EstadisticasPaymentCode(Long total, Long generados, Long usados,
-                                          Long expirados, Long cancelados, Long porVencer) {}
+            Long expirados, Long cancelados, Long porVencer) {
+    }
 }

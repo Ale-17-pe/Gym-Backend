@@ -1,13 +1,10 @@
 package com.gym.backend.Planes.Domain;
 
-
 import com.gym.backend.Planes.Application.Dto.ActualizarPlanRequest;
 import com.gym.backend.Planes.Domain.Exceptions.PlanDuplicateException;
 import com.gym.backend.Planes.Domain.Exceptions.PlanNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;

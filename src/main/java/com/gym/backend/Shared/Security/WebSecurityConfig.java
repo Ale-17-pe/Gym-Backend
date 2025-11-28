@@ -72,6 +72,33 @@ public class WebSecurityConfig {
                                                 // Endpoints de recepcionista y administrador
                                                 .requestMatchers("/api/asistencias/**", "/api/reportes/**")
                                                 .hasAnyRole("RECEPCIONISTA", "ADMINISTRADOR")
+
+                                                // ===== MÓDULO DE CLASES =====
+                                                // Admin: POST/PUT/DELETE tipos de clase
+                                                .requestMatchers(org.springframework.http.HttpMethod.POST,
+                                                                "/api/clases/tipos/**")
+                                                .hasRole("ADMINISTRADOR")
+                                                .requestMatchers(org.springframework.http.HttpMethod.PUT,
+                                                                "/api/clases/tipos/**")
+                                                .hasRole("ADMINISTRADOR")
+                                                .requestMatchers(org.springframework.http.HttpMethod.DELETE,
+                                                                "/api/clases/tipos/**")
+                                                .hasRole("ADMINISTRADOR")
+
+                                                // Admin: Gestión de instructores y horarios
+                                                .requestMatchers("/api/clases/instructores/**",
+                                                                "/api/clases/horarios/**")
+                                                .hasRole("ADMINISTRADOR")
+
+                                                // Admin: Generar sesiones
+                                                .requestMatchers(org.springframework.http.HttpMethod.POST,
+                                                                "/api/clases/sesiones/generar")
+                                                .hasRole("ADMINISTRADOR")
+
+                                                // Autenticados: Resto de clases (GET tipos, sesiones, reservas)
+                                                .requestMatchers("/api/clases/**")
+                                                .authenticated()
+
                                                 // Endpoints que requieren autenticación (cualquier usuario logueado)
                                                 .requestMatchers("/api/membresias/**", "/api/pagos/**",
                                                                 "/api/perfil/**", "/api/notificaciones/**")
