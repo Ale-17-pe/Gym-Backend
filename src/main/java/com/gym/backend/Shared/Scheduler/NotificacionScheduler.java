@@ -16,13 +16,14 @@ import com.gym.backend.Usuarios.Domain.Usuario;
 import com.gym.backend.Usuarios.Domain.UsuarioRepositoryPort;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.util.List;
 
 @Component
-// @EnableScheduling // Temporalmente deshabilitado para diagnosticar
+@EnableScheduling
 public class NotificacionScheduler {
 
     @Autowired

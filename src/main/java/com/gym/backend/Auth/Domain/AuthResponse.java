@@ -17,7 +17,11 @@ public record AuthResponse(
 
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime expiracion,
 
-        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime fechaLogin) {
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime fechaLogin,
+
+        // Campos para 2FA
+        Boolean requires2FA,
+        String message) {
     public AuthResponse {
         if (fechaLogin == null)
             fechaLogin = LocalDateTime.now();

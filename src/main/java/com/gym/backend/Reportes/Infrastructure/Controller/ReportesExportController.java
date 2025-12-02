@@ -25,10 +25,9 @@ public class ReportesExportController {
     private final ReporteTopPlanesPDF topPlanesPDF;
     private final ReporteTopPlanesExcel topPlanesExcel;
 
+    private final ReporteIngresosDetalleExcel reporteIngresosDetalleExcel;
+    private final ReporteIngresosDetallePDF reporteIngresosDetallePDF;
 
-    // --------------------------------------------------------
-    // 📌 1) PAGOS POR MÉTODO
-    // --------------------------------------------------------
 
     @GetMapping("/pagos-metodo/pdf")
     public ResponseEntity<byte[]> exportPagosMetodoPDF() throws Exception {
@@ -48,14 +47,10 @@ public class ReportesExportController {
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=pagos_por_metodo.xlsx")
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentType(
+                        MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(excel);
     }
-
-
-    // --------------------------------------------------------
-    // 📌 2) USUARIOS NUEVOS POR MES
-    // --------------------------------------------------------
 
     @GetMapping("/usuarios-nuevos/pdf")
     public ResponseEntity<byte[]> exportUsuariosNuevosPDF() throws Exception {
@@ -75,14 +70,10 @@ public class ReportesExportController {
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=usuarios_nuevos.xlsx")
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentType(
+                        MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(excel);
     }
-
-
-    // --------------------------------------------------------
-    // 📌 3) TOP PLANES
-    // --------------------------------------------------------
 
     @GetMapping("/top-planes/pdf")
     public ResponseEntity<byte[]> exportTopPlanesPDF() throws Exception {
@@ -102,9 +93,48 @@ public class ReportesExportController {
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=top_planes.xlsx")
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentType(
+                        MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(excel);
     }
 
 
+    @PostMapping("/ingresos/detallado/excel")
+    public ResponseEntity<byte[]> exportIngresosDetalladoExcel(
+            @RequestBody com.gym.backend.Reportes.Domain.DTO.FiltroIngresoDTO filtro) throws Exception {
+        var data = useCase.ingresosDetallados(filtro);
+        var resumen = useCase.resumenIngresos(filtro);
+        byte[] excel = reporteIngresosDetalleExcel.generar(data, resumen);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=reporte_ingresos.xlsx")
+                .contentType(
+                        MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(excel);
+    }
+
+    @PostMapping("/ingresos/detallado/pdf")
+    public ResponseEntity<byte[]> exportIngresosDetalladoPDF(
+            @RequestBody com.gym.backend.Reportes.Domain.DTO.FiltroIngresoDTO filtro) throws Exception {
+        var data = useCase.ingresosDetallados(filtro);
+        var resumen = useCase.resumenIngresos(filtro);
+        byte[] pdf = reporteIngresosDetallePDF.generar(data, resumen);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=reporte_ingresos.pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
+    @PostMapping("/ingresos/detallado")
+    public ResponseEntity<java.util.List<com.gym.backend.Reportes.Domain.Record.IngresoDetallado>> obtenerIngresosDetallados(
+            @RequestBody com.gym.backend.Reportes.Domain.DTO.FiltroIngresoDTO filtro) {
+        return ResponseEntity.ok(useCase.ingresosDetallados(filtro));
+    }
+
+    @PostMapping("/ingresos/resumen")
+    public ResponseEntity<com.gym.backend.Reportes.Domain.DTO.ResumenIngresoDTO> obtenerResumenIngresos(
+            @RequestBody com.gym.backend.Reportes.Domain.DTO.FiltroIngresoDTO filtro) {
+        return ResponseEntity.ok(useCase.resumenIngresos(filtro));
+    }
 }

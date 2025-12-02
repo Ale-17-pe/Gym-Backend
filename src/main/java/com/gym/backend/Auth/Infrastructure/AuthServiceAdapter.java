@@ -5,6 +5,7 @@ import com.gym.backend.Auth.Domain.AuthServicePort;
 import com.gym.backend.Auth.Domain.LoginCommand;
 import com.gym.backend.Auth.Domain.RegisterCommand;
 import com.gym.backend.Shared.Security.JwtService;
+import com.gym.backend.Shared.TwoFactorAuth.TwoFactorAuthService;
 import com.gym.backend.Usuarios.Domain.Enum.Genero;
 import com.gym.backend.Usuarios.Domain.Enum.Rol;
 import com.gym.backend.Usuarios.Domain.Exceptions.*;
@@ -24,6 +25,8 @@ public class AuthServiceAdapter implements AuthServicePort {
     private final UsuarioUseCase usuarioUseCase;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final TwoFactorAuthService twoFactorAuthService;
+    private final com.gym.backend.Shared.Email.EmailService emailService;
 
     @Override
     public AuthResponse login(LoginCommand command) {
@@ -46,6 +49,28 @@ public class AuthServiceAdapter implements AuthServicePort {
             throw new UsuarioValidationException("Credenciales inválidas");
         }
 
+        // Verificar si es ADMINISTRADOR - requiere 2FA
+        if (usuario.getRol() == Rol.ADMINISTRADOR) {
+            log.info("Usuario ADMIN detectado, generando código 2FA: {}", usuario.getEmail());
+            twoFactorAuthService.generateCode(usuario.getEmail());
+
+            return new AuthResponse(
+                    null, // No enviar token aún
+                    null,
+                    usuario.getId(),
+                    usuario.getNombreCompleto(),
+                    usuario.getEmail(),
+                    usuario.getDni(),
+                    usuario.getRol().name(),
+                    usuario.getGenero().name(),
+                    usuario.getActivo(),
+                    null, // Sin expiración aún
+                    LocalDateTime.now(),
+                    true, // requires2FA
+                    "Código de verificación generado. Revisa tu email.");
+        }
+
+        // Login normal para otros roles
         String token = jwtService.generateToken(usuario);
         LocalDateTime expiracion = jwtService.getExpirationFromToken(token);
 
@@ -62,7 +87,9 @@ public class AuthServiceAdapter implements AuthServicePort {
                 usuario.getGenero().name(),
                 usuario.getActivo(),
                 expiracion,
-                LocalDateTime.now());
+                LocalDateTime.now(),
+                false, // No requiere 2FA
+                null);
     }
 
     @Override
@@ -89,6 +116,18 @@ public class AuthServiceAdapter implements AuthServicePort {
                     .build();
 
             Usuario usuarioCreado = usuarioUseCase.crear(usuario);
+
+            // Log de confirmación en consola
+            logNuevoClienteRegistrado(usuarioCreado);
+
+            // Enviar email de bienvenida
+            try {
+                emailService.enviarEmailBienvenida(usuarioCreado.getId());
+                log.info("Email de bienvenida enviado a: {}", usuarioCreado.getEmail());
+            } catch (Exception e) {
+                log.warn("No se pudo enviar email de bienvenida: {}", e.getMessage());
+            }
+
             String token = jwtService.generateToken(usuarioCreado);
             LocalDateTime expiracion = jwtService.getExpirationFromToken(token);
 
@@ -105,7 +144,9 @@ public class AuthServiceAdapter implements AuthServicePort {
                     usuarioCreado.getGenero().name(),
                     usuarioCreado.getActivo(),
                     expiracion,
-                    LocalDateTime.now());
+                    LocalDateTime.now(),
+                    false,
+                    null);
 
         } catch (UsuarioDuplicateException e) {
             log.warn("Registro fallido - {}: {}", e.getCode(), e.getMessage());
@@ -144,5 +185,19 @@ public class AuthServiceAdapter implements AuthServicePort {
             log.warn("Rol no válido: {}, asignando CLIENTE por defecto", rol);
             return Rol.CLIENTE;
         }
+    }
+
+    /**
+     * Log de confirmación para nuevo cliente registrado
+     */
+    private void logNuevoClienteRegistrado(Usuario usuario) {
+        log.info("╔════════════════════════════════════════╗");
+        log.info("║   NUEVO CLIENTE REGISTRADO             ║");
+        log.info("╠════════════════════════════════════════╣");
+        log.info("║   Email:  {:<28}║", usuario.getEmail());
+        log.info("║   DNI:    {:<28}║", usuario.getDni());
+        log.info("║   Nombre: {:<28}║", usuario.getNombreCompleto());
+        log.info("║   Rol:    CLIENTE{:<22}║", "");
+        log.info("╚════════════════════════════════════════╝");
     }
 }

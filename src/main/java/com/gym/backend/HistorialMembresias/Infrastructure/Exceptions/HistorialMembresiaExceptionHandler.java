@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-@RestControllerAdvice
+@RestControllerAdvice(basePackages = "com.gym.backend.HistorialMembresias")
 public class HistorialMembresiaExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)

@@ -313,11 +313,125 @@ public class ReportesJpaRepository {
                 .setParameter("fin", fin)
                 .getSingleResult();
         stats.put("nuevasMembresias", nuevasMembresias);
-
         stats.put("periodoInicio", inicio);
         stats.put("periodoFin", fin);
         stats.put("fechaGeneracion", LocalDateTime.now());
 
         return stats;
+    }
+
+    public List<Object[]> ingresosDetallados(com.gym.backend.Reportes.Domain.DTO.FiltroIngresoDTO filtro) {
+        StringBuilder sql = new StringBuilder("""
+                SELECT
+                    p.fecha_pago,
+                    u.nombre || ' ' || u.apellido as usuario,
+                    u.dni,
+                    pl.nombre_plan,
+                    p.monto,
+                    p.metodo_pago,
+                    p.estado,
+                    p.codigo_pago,
+                    p.observaciones
+                FROM pagos p
+                JOIN membresias m ON m.pago_id = p.id
+                JOIN usuarios u ON u.id = m.usuario_id
+                JOIN planes pl ON pl.id = m.plan_id
+                WHERE p.fecha_pago BETWEEN :inicio AND :fin
+                """);
+
+        if (filtro.getEstado() != null && !filtro.getEstado().isEmpty() && !"TODOS".equals(filtro.getEstado())) {
+            sql.append(" AND p.estado = :estado");
+        }
+
+        if (filtro.getMetodoPago() != null && !filtro.getMetodoPago().isEmpty()
+                && !"TODOS".equals(filtro.getMetodoPago())) {
+            sql.append(" AND p.metodo_pago = :metodo");
+        }
+
+        if (filtro.getPlanId() != null && filtro.getPlanId() > 0) {
+            sql.append(" AND pl.id = :planId");
+        }
+
+        sql.append(" ORDER BY p.fecha_pago DESC");
+
+        var query = em.createNativeQuery(sql.toString());
+        query.setParameter("inicio", filtro.getFechaInicio());
+        query.setParameter("fin", filtro.getFechaFin());
+
+        if (filtro.getEstado() != null && !filtro.getEstado().isEmpty() && !"TODOS".equals(filtro.getEstado())) {
+            query.setParameter("estado", filtro.getEstado());
+        }
+
+        if (filtro.getMetodoPago() != null && !filtro.getMetodoPago().isEmpty()
+                && !"TODOS".equals(filtro.getMetodoPago())) {
+            query.setParameter("metodo", filtro.getMetodoPago());
+        }
+
+        if (filtro.getPlanId() != null && filtro.getPlanId() > 0) {
+            query.setParameter("planId", filtro.getPlanId());
+        }
+
+        return query.getResultList();
+    }
+
+    public Map<String, Object> resumenIngresos(com.gym.backend.Reportes.Domain.DTO.FiltroIngresoDTO filtro) {
+        StringBuilder sql = new StringBuilder("""
+                SELECT
+                    COALESCE(SUM(CASE WHEN p.estado = 'CONFIRMADO' THEN p.monto ELSE 0 END), 0) as total_confirmado,
+                    COALESCE(SUM(CASE WHEN p.estado = 'PENDIENTE' THEN p.monto ELSE 0 END), 0) as total_pendiente,
+                    COALESCE(SUM(CASE WHEN p.estado = 'CANCELADO' THEN p.monto ELSE 0 END), 0) as total_cancelado,
+                    COALESCE(SUM(p.monto), 0) as total_general,
+                    COUNT(*) as total_transacciones,
+                    COUNT(CASE WHEN p.estado = 'CONFIRMADO' THEN 1 END) as count_confirmado,
+                    COUNT(CASE WHEN p.estado = 'PENDIENTE' THEN 1 END) as count_pendiente,
+                    COUNT(CASE WHEN p.estado = 'CANCELADO' THEN 1 END) as count_cancelado
+                FROM pagos p
+                JOIN membresias m ON m.pago_id = p.id
+                JOIN planes pl ON pl.id = m.plan_id
+                WHERE p.fecha_pago BETWEEN :inicio AND :fin
+                """);
+
+        if (filtro.getEstado() != null && !filtro.getEstado().isEmpty() && !"TODOS".equals(filtro.getEstado())) {
+            sql.append(" AND p.estado = :estado");
+        }
+
+        if (filtro.getMetodoPago() != null && !filtro.getMetodoPago().isEmpty()
+                && !"TODOS".equals(filtro.getMetodoPago())) {
+            sql.append(" AND p.metodo_pago = :metodo");
+        }
+
+        if (filtro.getPlanId() != null && filtro.getPlanId() > 0) {
+            sql.append(" AND pl.id = :planId");
+        }
+
+        var query = em.createNativeQuery(sql.toString());
+        query.setParameter("inicio", filtro.getFechaInicio());
+        query.setParameter("fin", filtro.getFechaFin());
+
+        if (filtro.getEstado() != null && !filtro.getEstado().isEmpty() && !"TODOS".equals(filtro.getEstado())) {
+            query.setParameter("estado", filtro.getEstado());
+        }
+
+        if (filtro.getMetodoPago() != null && !filtro.getMetodoPago().isEmpty()
+                && !"TODOS".equals(filtro.getMetodoPago())) {
+            query.setParameter("metodo", filtro.getMetodoPago());
+        }
+
+        if (filtro.getPlanId() != null && filtro.getPlanId() > 0) {
+            query.setParameter("planId", filtro.getPlanId());
+        }
+
+        Object[] result = (Object[]) query.getSingleResult();
+        Map<String, Object> map = new HashMap<>();
+        map.put("totalConfirmado", result[0]);
+        map.put("totalPendiente", result[1]);
+        map.put("totalCancelado", result[2]);
+        map.put("totalGeneral", result[3]);
+        map.put("totalTransacciones", result[4]);
+        map.put("countConfirmado", result[5]);
+        map.put("countPendiente", result[6]);
+        map.put("countCancelado", result[7]);
+
+        return map;
     }
 }

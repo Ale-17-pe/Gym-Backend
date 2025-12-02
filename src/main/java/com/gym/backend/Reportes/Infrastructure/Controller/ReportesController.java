@@ -93,24 +93,6 @@ public class ReportesController {
         return useCase.planesPopulares();
     }
 
-    @GetMapping("/estadisticas-generales")
-    public Map<String, Object> estadisticasGenerales() {
-        return useCase.estadisticasGenerales();
-    }
-
-    @GetMapping("/estadisticas-fecha")
-    public Map<String, Object> estadisticasPorFecha(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime inicio,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fin) {
-        return useCase.estadisticasPorFecha(inicio, fin);
-    }
-
-    @PostMapping("/limpiar-cache")
-    public ResponseEntity<Map<String, String>> limpiarCache() {
-        useCase.limpiarCache();
-        return ResponseEntity.ok(Map.of("mensaje", "Cache de reportes limpiado exitosamente"));
-    }
-
     @GetMapping("/dashboard")
     public Map<String, Object> dashboard() {
         // Reporte consolidado para dashboard
@@ -118,7 +100,6 @@ public class ReportesController {
                 "estadisticas", useCase.estadisticasGenerales(),
                 "topPlanes", useCase.topPlanes(),
                 "ingresosMensuales", useCase.ingresosMensuales(),
-                "asistenciasDiarias", useCase.asistenciasDiarias()
-        );
+                "asistenciasDiarias", useCase.asistenciasDiarias());
     }
 }

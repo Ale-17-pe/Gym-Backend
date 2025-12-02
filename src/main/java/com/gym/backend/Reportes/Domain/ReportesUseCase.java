@@ -3,7 +3,6 @@ package com.gym.backend.Reportes.Domain;
 import com.gym.backend.Reportes.Domain.Record.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -102,6 +101,28 @@ public class ReportesUseCase {
 
     public void limpiarCache() {
         log.info("Limpiando cache de reportes");
+    }
+
+    // --- NUEVOS MÉTODOS PARA REPORTE DETALLADO ---
+
+    public List<IngresoDetallado> ingresosDetallados(com.gym.backend.Reportes.Domain.DTO.FiltroIngresoDTO filtro) {
+        log.info("Generando reporte detallado de ingresos");
+        validarFiltroIngresos(filtro);
+        return repo.ingresosDetallados(filtro);
+    }
+
+    public com.gym.backend.Reportes.Domain.DTO.ResumenIngresoDTO resumenIngresos(
+            com.gym.backend.Reportes.Domain.DTO.FiltroIngresoDTO filtro) {
+        log.info("Generando resumen de ingresos");
+        validarFiltroIngresos(filtro);
+        return repo.resumenIngresos(filtro);
+    }
+
+    private void validarFiltroIngresos(com.gym.backend.Reportes.Domain.DTO.FiltroIngresoDTO filtro) {
+        if (filtro.getFechaInicio() == null || filtro.getFechaFin() == null) {
+            throw new IllegalArgumentException("Las fechas de inicio y fin son obligatorias");
+        }
+        validarRangoFechas(filtro.getFechaInicio(), filtro.getFechaFin());
     }
 
     private void validarRangoFechas(LocalDateTime inicio, LocalDateTime fin) {

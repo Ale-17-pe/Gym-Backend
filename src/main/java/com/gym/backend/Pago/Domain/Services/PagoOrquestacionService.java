@@ -4,6 +4,8 @@ import com.gym.backend.HistorialPagos.Domain.HistorialPagoUseCase;
 import com.gym.backend.Membresias.Domain.Enum.EstadoMembresia;
 import com.gym.backend.Membresias.Domain.Membresia;
 import com.gym.backend.Membresias.Domain.MembresiaUseCase;
+import com.gym.backend.Notificacion.Application.NotificacionService;
+import com.gym.backend.Notificacion.Domain.TipoNotificacion;
 import com.gym.backend.Pago.Application.Dto.CrearPagoRequest;
 import com.gym.backend.Pago.Application.Mapper.PagoMapper;
 import com.gym.backend.Pago.Domain.Pago;
@@ -12,6 +14,9 @@ import com.gym.backend.PaymentCode.Domain.PaymentCode;
 import com.gym.backend.PaymentCode.Domain.PaymentCodeUseCase;
 import com.gym.backend.Planes.Domain.Plan;
 import com.gym.backend.Planes.Domain.PlanUseCase;
+import com.gym.backend.Shared.Email.EmailService;
+import com.gym.backend.Usuarios.Application.Dto.UsuarioDTO;
+import com.gym.backend.Usuarios.Application.Mapper.UsuarioMapper;
 import com.gym.backend.Usuarios.Domain.UsuarioUseCase;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -34,6 +40,9 @@ public class PagoOrquestacionService {
     private final UsuarioUseCase usuarioUseCase;
     private final HistorialPagoUseCase historialPago;
     private final PagoMapper pagoMapper;
+    private final EmailService emailService;
+    private final NotificacionService notificacionService;
+    private final UsuarioMapper usuarioMapper;
 
     @Transactional
     public ProcesoPagoResponse iniciarProcesoPago(CrearPagoRequest request) {
@@ -60,6 +69,23 @@ public class PagoOrquestacionService {
 
             log.info("Proceso de pago iniciado - Pago ID: {}, Código: {}", pagoRegistrado.getId(),
                     paymentCode.getCodigo());
+
+            // Enviar email con código de pago
+            try {
+                emailService.enviarComprobantePago(pagoRegistrado.getId());
+                log.info("✅ Email de pago pendiente enviado");
+
+                // Crear notificación in-app
+                var usuario = usuarioUseCase.obtener(request.getUsuarioId());
+                UsuarioDTO usuarioDTO = usuarioMapper.toDTO(usuario);
+                notificacionService.crearSoloInApp(
+                        usuarioDTO,
+                        TipoNotificacion.PAGO_PENDIENTE,
+                        "Pago Pendiente Generado",
+                        "Se ha generado un código de pago: " + paymentCode.getCodigo());
+            } catch (Exception emailEx) {
+                log.error("❌ Error enviando email/notificación: {}", emailEx.getMessage());
+            }
 
             return ProcesoPagoResponse.builder()
                     .pago(pagoRegistrado)
@@ -138,6 +164,23 @@ public class PagoOrquestacionService {
                     "Confirmación de pago");
 
             crearOActualizarMembresia(pagoConfirmado);
+
+            // Enviar email de felicitaciones y notificación
+            try {
+                emailService.enviarFelicitacionMembresia(pagoConfirmado.getId());
+                log.info("✅ Email de felicitaciones enviado");
+
+                // Crear notificación in-app
+                var usuario = usuarioUseCase.obtener(pagoConfirmado.getUsuarioId());
+                UsuarioDTO usuarioDTO = usuarioMapper.toDTO(usuario);
+                notificacionService.crearSoloInApp(
+                        usuarioDTO,
+                        TipoNotificacion.PAGO_CONFIRMADO,
+                        "¡Pago Confirmado!",
+                        "Tu pago ha sido confirmado y tu membresía está activa.");
+            } catch (Exception e) {
+                log.error("❌ Error enviando email/notificación de felicitaciones: {}", e.getMessage());
+            }
 
             log.info("Pago confirmado exitosamente - Pago ID: {}, Usuario: {}", pagoConfirmado.getId(),
                     pagoConfirmado.getUsuarioId());

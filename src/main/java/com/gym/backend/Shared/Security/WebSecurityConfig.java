@@ -64,21 +64,6 @@ public class WebSecurityConfig {
                                                                 "/api/planes/**")
                                                 .hasRole("ADMINISTRADOR")
                                                 .requestMatchers(org.springframework.http.HttpMethod.PUT,
-                                                                "/api/planes/**")
-                                                .hasRole("ADMINISTRADOR")
-                                                .requestMatchers(org.springframework.http.HttpMethod.DELETE,
-                                                                "/api/planes/**")
-                                                .hasRole("ADMINISTRADOR")
-                                                // Endpoints de recepcionista y administrador
-                                                .requestMatchers("/api/asistencias/**", "/api/reportes/**")
-                                                .hasAnyRole("RECEPCIONISTA", "ADMINISTRADOR")
-
-                                                // ===== MÓDULO DE CLASES =====
-                                                // Admin: POST/PUT/DELETE tipos de clase
-                                                .requestMatchers(org.springframework.http.HttpMethod.POST,
-                                                                "/api/clases/tipos/**")
-                                                .hasRole("ADMINISTRADOR")
-                                                .requestMatchers(org.springframework.http.HttpMethod.PUT,
                                                                 "/api/clases/tipos/**")
                                                 .hasRole("ADMINISTRADOR")
                                                 .requestMatchers(org.springframework.http.HttpMethod.DELETE,
@@ -89,6 +74,12 @@ public class WebSecurityConfig {
                                                 .requestMatchers("/api/clases/instructores/**",
                                                                 "/api/clases/horarios/**")
                                                 .hasRole("ADMINISTRADOR")
+
+                                                .requestMatchers("/api/asistencias/**")
+                                                .hasAnyRole("RECEPCIONISTA", "ADMINISTRADOR")
+                                                // Endpoints de reportes - incluye CONTADOR
+                                                .requestMatchers("/api/reportes/**")
+                                                .hasAnyRole("RECEPCIONISTA", "ADMINISTRADOR", "CONTADOR")
 
                                                 // Admin: Generar sesiones
                                                 .requestMatchers(org.springframework.http.HttpMethod.POST,

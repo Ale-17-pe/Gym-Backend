@@ -21,7 +21,7 @@ public class ReservaClaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "sesion_clase_id", nullable = false)
     private SesionClaseEntity sesionClase;
 
