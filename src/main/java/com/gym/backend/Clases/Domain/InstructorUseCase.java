@@ -41,8 +41,8 @@ public class InstructorUseCase {
         var usuario = usuarioJpaRepository.findById(usuarioId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        if (usuario.getRol() != Rol.INSTRUCTOR) {
-            throw new RuntimeException("El usuario debe tener rol INSTRUCTOR");
+        if (!usuario.getRoles().contains(Rol.ENTRENADOR)) {
+            throw new RuntimeException("El usuario debe tener rol ENTRENADOR");
         }
 
         // Verificar que no existe ya un instructor para este usuario

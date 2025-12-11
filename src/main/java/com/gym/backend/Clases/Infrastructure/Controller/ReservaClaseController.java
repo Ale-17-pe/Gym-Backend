@@ -39,13 +39,13 @@ public class ReservaClaseController {
     }
 
     @GetMapping("/sesion/{sesionId}")
-    @PreAuthorize("hasAnyRole('RECEPCIONISTA', 'ADMINISTRADOR', 'INSTRUCTOR')")
+    @PreAuthorize("hasAnyRole('RECEPCIONISTA', 'ADMINISTRADOR', 'ENTRENADOR')")
     public ResponseEntity<List<ReservaClaseEntity>> obtenerReservasSesion(@PathVariable Long sesionId) {
         return ResponseEntity.ok(useCase.obtenerReservasSesion(sesionId));
     }
 
     @PutMapping("/{id}/asistencia")
-    @PreAuthorize("hasAnyRole('RECEPCIONISTA', 'ADMINISTRADOR', 'INSTRUCTOR')")
+    @PreAuthorize("hasAnyRole('RECEPCIONISTA', 'ADMINISTRADOR', 'ENTRENADOR')")
     public ResponseEntity<Void> marcarAsistencia(
             @PathVariable Long id,
             @RequestParam boolean asistio) {

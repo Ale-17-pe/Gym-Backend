@@ -37,14 +37,14 @@ public class SesionClaseController {
     }
 
     @PostMapping("/{id}/cancelar")
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'INSTRUCTOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'ENTRENADOR')")
     public ResponseEntity<Void> cancelarSesion(@PathVariable Long id, @RequestParam String motivo) {
         useCase.cancelarSesion(id, motivo);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{id}/completar")
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'INSTRUCTOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'ENTRENADOR')")
     public ResponseEntity<Void> completarSesion(@PathVariable Long id) {
         useCase.completarSesion(id);
         return ResponseEntity.ok().build();

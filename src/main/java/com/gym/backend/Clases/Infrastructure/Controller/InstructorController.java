@@ -49,7 +49,7 @@ public class InstructorController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'INSTRUCTOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'ENTRENADOR')")
     public ResponseEntity<InstructorEntity> actualizar(
             @PathVariable Long id,
             @RequestBody Map<String, String> datos) {

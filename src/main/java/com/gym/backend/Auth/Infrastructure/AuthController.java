@@ -70,7 +70,9 @@ public class AuthController {
                     usuario.getEmail(),
                     usuario.getDni(),
                     usuario.getRol().name(),
-                    usuario.getGenero().name(),
+                    usuario.getPersona() != null && usuario.getPersona().getGenero() != null
+                            ? usuario.getPersona().getGenero().name()
+                            : "PREFIERO_NO_DECIR",
                     usuario.getActivo(),
                     expiracion,
                     LocalDateTime.now(),

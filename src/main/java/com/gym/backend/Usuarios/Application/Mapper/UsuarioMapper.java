@@ -1,68 +1,66 @@
 package com.gym.backend.Usuarios.Application.Mapper;
 
-import com.gym.backend.Usuarios.Application.Dto.ActualizarUsuarioRequest;
-import com.gym.backend.Usuarios.Application.Dto.CrearUsuarioRequest;
 import com.gym.backend.Usuarios.Application.Dto.UsuarioDTO;
 import com.gym.backend.Usuarios.Application.Dto.UsuarioResponse;
-import com.gym.backend.Usuarios.Domain.Enum.Genero;
-import com.gym.backend.Usuarios.Domain.Enum.Rol;
+import com.gym.backend.Usuarios.Domain.Persona;
 import com.gym.backend.Usuarios.Domain.Usuario;
-import com.gym.backend.Usuarios.Infrastructure.Entity.UsuarioEntity;
-import org.mapstruct.*;
+import org.springframework.stereotype.Component;
 
-@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-public interface UsuarioMapper {
+import java.util.HashSet;
 
-    Usuario toDomain(UsuarioEntity entity);
+/**
+ * Mapper manual para Usuario (nueva estructura normalizada)
+ * MapStruct no maneja bien la relación con Persona
+ */
+@Component
+public class UsuarioMapper {
 
-    UsuarioEntity toEntity(Usuario domain);
+    public UsuarioDTO toDTO(Usuario usuario) {
+        if (usuario == null)
+            return null;
 
-    UsuarioDTO toDTO(Usuario domain);
+        UsuarioDTO dto = new UsuarioDTO();
+        dto.setId(usuario.getId());
+        dto.setEmail(usuario.getEmail());
+        dto.setActivo(usuario.getActivo());
+        dto.setEmailVerificado(usuario.getEmailVerificado());
+        dto.setRol(usuario.getRol() != null ? usuario.getRol().name() : null);
 
-    Usuario toDomain(UsuarioDTO dto);
-
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "activo", constant = "true")
-    @Mapping(target = "rol", source = "rol", qualifiedByName = "stringToRol")
-    @Mapping(target = "genero", source = "genero", qualifiedByName = "stringToGenero")
-    @Mapping(target = "fechaNacimiento", source = "fechaNacimiento")
-    Usuario toDomainFromCreateRequest(CrearUsuarioRequest request);
-
-    UsuarioResponse toResponse(Usuario domain);
-
-    @Mapping(target = "dni", ignore = true)
-    @Mapping(target = "password", ignore = true)
-    void updateDomainFromActualizarRequest(ActualizarUsuarioRequest request, @MappingTarget Usuario domain);
-
-    @Named("stringToRol")
-    default Rol stringToRol(String rol) {
-        if (rol == null)
-            return Rol.CLIENTE;
-        try {
-            return Rol.valueOf(rol.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            return Rol.CLIENTE;
+        // Datos desde Persona
+        if (usuario.getPersona() != null) {
+            Persona p = usuario.getPersona();
+            dto.setNombre(p.getNombre());
+            dto.setApellido(p.getApellido());
+            dto.setDni(p.getDni());
+            dto.setGenero(p.getGenero() != null ? p.getGenero().name() : null);
+            dto.setTelefono(p.getTelefono());
+            dto.setDireccion(p.getDireccion());
+            dto.setFechaNacimiento(p.getFechaNacimiento());
         }
+
+        return dto;
     }
 
-    @Named("rolToString")
-    default String rolToString(Rol rol) {
-        return rol != null ? rol.name() : null;
-    }
+    public UsuarioResponse toResponse(Usuario usuario) {
+        if (usuario == null)
+            return null;
 
-    @Named("stringToGenero")
-    default Genero stringToGenero(String genero) {
-        if (genero == null)
-            return Genero.PREFIERO_NO_DECIR;
-        try {
-            return Genero.valueOf(genero.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            return Genero.PREFIERO_NO_DECIR;
-        }
-    }
-
-    @Named("generoToString")
-    default String generoToString(Genero genero) {
-        return genero != null ? genero.name() : null;
+        return UsuarioResponse.builder()
+                .id(usuario.getId())
+                .email(usuario.getEmail())
+                .nombre(usuario.getNombre())
+                .apellido(usuario.getApellido())
+                .nombreCompleto(usuario.getNombreCompleto())
+                .dni(usuario.getDni())
+                .genero(usuario.getPersona() != null && usuario.getPersona().getGenero() != null
+                        ? usuario.getPersona().getGenero().name()
+                        : null)
+                .telefono(usuario.getTelefono())
+                .direccion(usuario.getDireccion())
+                .rol(usuario.getRol() != null ? usuario.getRol().name() : null)
+                .activo(usuario.getActivo())
+                .emailVerificado(usuario.getEmailVerificado())
+                .fechaNacimiento(usuario.getFechaNacimiento())
+                .build();
     }
 }

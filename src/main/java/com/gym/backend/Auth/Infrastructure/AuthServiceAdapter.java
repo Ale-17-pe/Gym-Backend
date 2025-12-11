@@ -6,7 +6,7 @@ import com.gym.backend.Auth.Domain.LoginCommand;
 import com.gym.backend.Auth.Domain.RegisterCommand;
 import com.gym.backend.Shared.Security.JwtService;
 import com.gym.backend.Shared.TwoFactorAuth.TwoFactorAuthService;
-import com.gym.backend.Usuarios.Domain.Enum.Genero;
+import com.gym.backend.Usuarios.Application.RegistroUsuarioService;
 import com.gym.backend.Usuarios.Domain.Enum.Rol;
 import com.gym.backend.Usuarios.Domain.Exceptions.*;
 import com.gym.backend.Usuarios.Domain.*;
@@ -22,7 +22,9 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class AuthServiceAdapter implements AuthServicePort {
 
-    private final UsuarioUseCase usuarioUseCase;
+    private final UsuarioRepositoryPort usuarioRepository;
+    private final PersonaRepositoryPort personaRepository;
+    private final RegistroUsuarioService registroService;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final TwoFactorAuthService twoFactorAuthService;
@@ -50,23 +52,23 @@ public class AuthServiceAdapter implements AuthServicePort {
         }
 
         // Verificar si es ADMINISTRADOR - requiere 2FA
-        if (usuario.getRol() == Rol.ADMINISTRADOR) {
+        if (usuario.esAdministrador()) {
             log.info("Usuario ADMIN detectado, generando código 2FA: {}", usuario.getEmail());
             twoFactorAuthService.generateCode(usuario.getEmail());
 
             return new AuthResponse(
-                    null, // No enviar token aún
+                    null,
                     null,
                     usuario.getId(),
                     usuario.getNombreCompleto(),
                     usuario.getEmail(),
                     usuario.getDni(),
                     usuario.getRol().name(),
-                    usuario.getGenero().name(),
+                    usuario.getPersona() != null ? usuario.getPersona().getGenero().name() : "PREFIERO_NO_DECIR",
                     usuario.getActivo(),
-                    null, // Sin expiración aún
+                    null,
                     LocalDateTime.now(),
-                    true, // requires2FA
+                    true,
                     "Código de verificación generado. Revisa tu email.");
         }
 
@@ -84,11 +86,11 @@ public class AuthServiceAdapter implements AuthServicePort {
                 usuario.getEmail(),
                 usuario.getDni(),
                 usuario.getRol().name(),
-                usuario.getGenero().name(),
+                usuario.getPersona() != null ? usuario.getPersona().getGenero().name() : "PREFIERO_NO_DECIR",
                 usuario.getActivo(),
                 expiracion,
                 LocalDateTime.now(),
-                false, // No requiere 2FA
+                false,
                 null);
     }
 
@@ -97,28 +99,12 @@ public class AuthServiceAdapter implements AuthServicePort {
         log.info("Registrando nuevo usuario: {}", command.email());
 
         try {
-            Genero genero = command.genero() != null ? Genero.valueOf(command.genero().toUpperCase())
-                    : Genero.PREFIERO_NO_DECIR;
-
-            Rol rol = validarYAsignarRol(command.rol());
-
-            Usuario usuario = Usuario.builder()
-                    .nombre(command.nombre().trim())
-                    .apellido(command.apellido().trim())
-                    .genero(genero)
-                    .email(command.email().trim().toLowerCase())
-                    .dni(command.dni().trim())
-                    .telefono(command.telefono() != null ? command.telefono().trim() : null)
-                    .direccion(command.direccion() != null ? command.direccion().trim() : null)
-                    .password(passwordEncoder.encode(command.password()))
-                    .rol(rol)
-                    .activo(true)
-                    .build();
-
-            Usuario usuarioCreado = usuarioUseCase.crear(usuario);
+            // Usar el nuevo servicio de registro que crea Usuario + Persona +
+            // Cliente/Empleado
+            Usuario usuarioCreado = registroService.registrarUsuarioCompleto(command);
 
             // Log de confirmación en consola
-            logNuevoClienteRegistrado(usuarioCreado);
+            logNuevoUsuarioRegistrado(usuarioCreado);
 
             // Enviar email de bienvenida
             try {
@@ -141,7 +127,8 @@ public class AuthServiceAdapter implements AuthServicePort {
                     usuarioCreado.getEmail(),
                     usuarioCreado.getDni(),
                     usuarioCreado.getRol().name(),
-                    usuarioCreado.getGenero().name(),
+                    usuarioCreado.getPersona() != null ? usuarioCreado.getPersona().getGenero().name()
+                            : "PREFIERO_NO_DECIR",
                     usuarioCreado.getActivo(),
                     expiracion,
                     LocalDateTime.now(),
@@ -152,7 +139,7 @@ public class AuthServiceAdapter implements AuthServicePort {
             log.warn("Registro fallido - {}: {}", e.getCode(), e.getMessage());
             throw e;
         } catch (Exception e) {
-            log.error("Error en registro: {}", e.getMessage());
+            log.error("Error en registro: {}", e.getMessage(), e);
             throw new UsuarioValidationException("Error en el registro: " + e.getMessage());
         }
     }
@@ -165,39 +152,29 @@ public class AuthServiceAdapter implements AuthServicePort {
     }
 
     private Usuario buscarUsuarioPorEmailODni(String emailOrDni) {
-        try {
-            return usuarioUseCase.obtenerPorEmail(emailOrDni);
-        } catch (UsuarioNotFoundException e) {
-            try {
-                return usuarioUseCase.obtenerPorDni(emailOrDni);
-            } catch (UsuarioNotFoundException ex) {
-                return null;
-            }
+        // Buscar por email con datos completos
+        var porEmail = usuarioRepository.buscarPorEmailConDatosCompletos(emailOrDni);
+        if (porEmail.isPresent()) {
+            return porEmail.get();
         }
+
+        // Buscar por DNI
+        var persona = personaRepository.buscarPorDni(emailOrDni);
+        if (persona.isPresent()) {
+            return usuarioRepository.buscarPorIdConDatosCompletos(persona.get().getUsuarioId()).orElse(null);
+        }
+
+        return null;
     }
 
-    private Rol validarYAsignarRol(String rol) {
-        if (rol == null || rol.isBlank())
-            return Rol.CLIENTE;
-        try {
-            return Rol.valueOf(rol.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            log.warn("Rol no válido: {}, asignando CLIENTE por defecto", rol);
-            return Rol.CLIENTE;
-        }
-    }
-
-    /**
-     * Log de confirmación para nuevo cliente registrado
-     */
-    private void logNuevoClienteRegistrado(Usuario usuario) {
+    private void logNuevoUsuarioRegistrado(Usuario usuario) {
         log.info("╔════════════════════════════════════════╗");
-        log.info("║   NUEVO CLIENTE REGISTRADO             ║");
+        log.info("║   NUEVO USUARIO REGISTRADO             ║");
         log.info("╠════════════════════════════════════════╣");
         log.info("║   Email:  {:<28}║", usuario.getEmail());
         log.info("║   DNI:    {:<28}║", usuario.getDni());
         log.info("║   Nombre: {:<28}║", usuario.getNombreCompleto());
-        log.info("║   Rol:    CLIENTE{:<22}║", "");
+        log.info("║   Rol:    {:<28}║", usuario.getRol().name());
         log.info("╚════════════════════════════════════════╝");
     }
 }

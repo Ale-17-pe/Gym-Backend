@@ -13,28 +13,36 @@ import java.time.LocalDate;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests unitarios para la entidad de dominio Usuario
+ * Tests unitarios para la entidad de dominio Usuario (normalizada)
  */
 @DisplayName("Usuario Domain Tests")
 class UsuarioTest {
 
     private Usuario.UsuarioBuilder usuarioBuilder;
+    private Persona persona;
 
     @BeforeEach
     void setUp() {
-        usuarioBuilder = Usuario.builder()
+        // Crear Persona primero
+        persona = Persona.builder()
                 .id(1L)
                 .nombre("Juan")
                 .apellido("Pérez")
-                .email("juan.perez@example.com")
                 .dni("12345678")
-                .password("password123")
+                .genero(Genero.MASCULINO)
                 .telefono("987654321")
                 .direccion("Av. Principal 123")
-                .genero(Genero.MASCULINO)
-                .rol(Rol.CLIENTE)
+                .fechaNacimiento(LocalDate.of(1990, 5, 15))
+                .build();
+
+        // Usuario solo tiene datos de auth
+        usuarioBuilder = Usuario.builder()
+                .id(1L)
+                .email("juan.perez@example.com")
+                .password("password123")
                 .activo(true)
-                .fechaNacimiento(LocalDate.of(1990, 5, 15));
+                .emailVerificado(false)
+                .persona(persona);
     }
 
     @Nested
@@ -49,35 +57,15 @@ class UsuarioTest {
         }
 
         @Test
-        @DisplayName("Nombre vacío lanza UsuarioValidationException")
-        void nombreVacio_LanzaExcepcion() {
-            Usuario usuario = usuarioBuilder.nombre("").build();
+        @DisplayName("Email inválido lanza UsuarioValidationException")
+        void emailInvalido_LanzaExcepcion() {
+            Usuario usuario = usuarioBuilder.email("email-invalido").build();
 
             UsuarioValidationException exception = assertThrows(
                     UsuarioValidationException.class,
                     usuario::validar);
 
-            assertEquals("Nombre es requerido", exception.getMessage());
-        }
-
-        @Test
-        @DisplayName("Nombre nulo lanza UsuarioValidationException")
-        void nombreNulo_LanzaExcepcion() {
-            Usuario usuario = usuarioBuilder.nombre(null).build();
-
-            assertThrows(UsuarioValidationException.class, usuario::validar);
-        }
-
-        @Test
-        @DisplayName("Apellido vacío lanza UsuarioValidationException")
-        void apellidoVacio_LanzaExcepcion() {
-            Usuario usuario = usuarioBuilder.apellido("").build();
-
-            UsuarioValidationException exception = assertThrows(
-                    UsuarioValidationException.class,
-                    usuario::validar);
-
-            assertEquals("Apellido es requerido", exception.getMessage());
+            assertTrue(exception.getMessage().contains("Email"));
         }
 
         @Test
@@ -91,26 +79,6 @@ class UsuarioTest {
 
             assertEquals("Password debe tener al menos 6 caracteres", exception.getMessage());
         }
-
-        @Test
-        @DisplayName("DNI con caracteres no numéricos lanza excepción")
-        void dniConLetras_LanzaExcepcion() {
-            Usuario usuario = usuarioBuilder.dni("1234567A").build();
-
-            UsuarioValidationException exception = assertThrows(
-                    UsuarioValidationException.class,
-                    usuario::validar);
-
-            assertTrue(exception.getMessage().contains("DNI"));
-        }
-
-        @Test
-        @DisplayName("DNI muy corto lanza excepción")
-        void dniMuyCorto_LanzaExcepcion() {
-            Usuario usuario = usuarioBuilder.dni("1234").build();
-
-            assertThrows(UsuarioValidationException.class, usuario::validar);
-        }
     }
 
     @Nested
@@ -118,19 +86,32 @@ class UsuarioTest {
     class MetodosNegocioTests {
 
         @Test
-        @DisplayName("esAdministrador retorna true para rol ADMINISTRADOR")
+        @DisplayName("esAdministrador retorna true cuando tiene rol ADMINISTRADOR")
         void esAdministrador_ConRolAdmin_RetornaTrue() {
-            Usuario usuario = usuarioBuilder.rol(Rol.ADMINISTRADOR).build();
+            Usuario usuario = usuarioBuilder.build();
+            usuario.agregarRol(Rol.ADMINISTRADOR);
 
             assertTrue(usuario.esAdministrador());
         }
 
         @Test
-        @DisplayName("esAdministrador retorna false para rol CLIENTE")
-        void esAdministrador_ConRolCliente_RetornaFalse() {
-            Usuario usuario = usuarioBuilder.rol(Rol.CLIENTE).build();
+        @DisplayName("esCliente retorna true cuando tiene rol CLIENTE")
+        void esCliente_ConRolCliente_RetornaTrue() {
+            Usuario usuario = usuarioBuilder.build();
+            usuario.agregarRol(Rol.CLIENTE);
 
-            assertFalse(usuario.esAdministrador());
+            assertTrue(usuario.esCliente());
+        }
+
+        @Test
+        @DisplayName("Puede tener múltiples roles")
+        void puedeMultiplesRoles() {
+            Usuario usuario = usuarioBuilder.build();
+            usuario.agregarRol(Rol.ENTRENADOR);
+            usuario.agregarRol(Rol.CLIENTE);
+
+            assertTrue(usuario.esEntrenador());
+            assertTrue(usuario.esCliente());
         }
 
         @Test
@@ -150,20 +131,9 @@ class UsuarioTest {
         }
 
         @Test
-        @DisplayName("esActivo retorna false cuando activo es null")
-        void esActivo_CuandoNull_RetornaFalse() {
-            Usuario usuario = usuarioBuilder.activo(null).build();
-
-            assertFalse(usuario.esActivo());
-        }
-
-        @Test
-        @DisplayName("getNombreCompleto retorna nombre y apellido concatenados")
-        void getNombreCompleto_RetornaNombreYApellido() {
-            Usuario usuario = usuarioBuilder
-                    .nombre("Juan")
-                    .apellido("Pérez")
-                    .build();
+        @DisplayName("getNombreCompleto obtiene desde Persona")
+        void getNombreCompleto_RetornaDesdaPersona() {
+            Usuario usuario = usuarioBuilder.build();
 
             assertEquals("Juan Pérez", usuario.getNombreCompleto());
         }
@@ -199,8 +169,17 @@ class UsuarioTest {
             assertNotNull(Rol.ADMINISTRADOR);
             assertNotNull(Rol.CLIENTE);
             assertNotNull(Rol.RECEPCIONISTA);
-            assertNotNull(Rol.INSTRUCTOR);
+            assertNotNull(Rol.ENTRENADOR);
             assertNotNull(Rol.CONTADOR);
+        }
+
+        @Test
+        @DisplayName("getRol retorna el rol principal")
+        void getRol_RetornaRolPrincipal() {
+            Usuario usuario = usuarioBuilder.build();
+            usuario.agregarRol(Rol.CLIENTE);
+
+            assertEquals(Rol.CLIENTE, usuario.getRol());
         }
     }
 
@@ -213,6 +192,7 @@ class UsuarioTest {
         void todosLosGenerosExisten() {
             assertNotNull(Genero.MASCULINO);
             assertNotNull(Genero.FEMENINO);
+            assertNotNull(Genero.PREFIERO_NO_DECIR);
         }
     }
 }
