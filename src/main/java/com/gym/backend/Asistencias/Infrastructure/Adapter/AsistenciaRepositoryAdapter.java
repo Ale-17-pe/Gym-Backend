@@ -13,6 +13,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Adapter para repositorio de Asistencias - NORMALIZADO (3NF)
+ * El campo usuario_id se obtiene a través de JOIN con membresias.
+ */
 @Component
 @RequiredArgsConstructor
 public class AsistenciaRepositoryAdapter implements AsistenciaRepositoryPort {
@@ -51,12 +55,14 @@ public class AsistenciaRepositoryAdapter implements AsistenciaRepositoryPort {
 
     @Override
     public List<Asistencia> listarPorUsuario(Long usuarioId) {
-        return jpa.findByUsuarioId(usuarioId).stream().map(this::toDomain).toList();
+        // NORMALIZADO 3NF: Usa JOIN con membresias
+        return jpa.findByUsuarioIdViaJoin(usuarioId).stream().map(this::toDomain).toList();
     }
 
     @Override
     public Page<Asistencia> listarPorUsuarioPaginated(Long usuarioId, Pageable pageable) {
-        return jpa.findByUsuarioId(usuarioId, pageable).map(this::toDomain);
+        // NORMALIZADO 3NF: Usa JOIN con membresias
+        return jpa.findByUsuarioIdViaJoin(usuarioId, pageable).map(this::toDomain);
     }
 
     @Override
@@ -65,18 +71,27 @@ public class AsistenciaRepositoryAdapter implements AsistenciaRepositoryPort {
     }
 
     @Override
+    public List<Asistencia> listarPorUsuarioYFecha(Long usuarioId, LocalDateTime inicio, LocalDateTime fin) {
+        return jpa.findByUsuarioIdAndFechaHoraBetween(usuarioId, inicio, fin)
+                .stream().map(this::toDomain).toList();
+    }
+
+    @Override
     public boolean existeEntradaHoy(Long usuarioId, LocalDateTime inicio, LocalDateTime fin) {
-        return jpa.existsByUsuarioIdAndTipoAndFechaHoraBetween(usuarioId, "ENTRADA", inicio, fin);
+        // NORMALIZADO 3NF: Usa JOIN con membresias
+        return jpa.existsByUsuarioIdAndTipoViaJoin(usuarioId, "ENTRADA", inicio, fin);
     }
 
     @Override
     public boolean existeSalidaHoy(Long usuarioId, LocalDateTime inicio, LocalDateTime fin) {
-        return jpa.existsByUsuarioIdAndTipoAndFechaHoraBetween(usuarioId, "SALIDA", inicio, fin);
+        // NORMALIZADO 3NF: Usa JOIN con membresias
+        return jpa.existsByUsuarioIdAndTipoViaJoin(usuarioId, "SALIDA", inicio, fin);
     }
 
     @Override
     public Optional<Asistencia> buscarEntradaHoy(Long usuarioId, LocalDateTime inicio, LocalDateTime fin) {
-        return jpa.findByUsuarioIdAndTipoAndFechaHoraBetween(usuarioId, "ENTRADA", inicio, fin)
+        // NORMALIZADO 3NF: Usa JOIN con membresias
+        return jpa.findByUsuarioIdAndTipoViaJoin(usuarioId, "ENTRADA", inicio, fin)
                 .map(this::toDomain);
     }
 
@@ -96,13 +111,15 @@ public class AsistenciaRepositoryAdapter implements AsistenciaRepositoryPort {
     public Long contarUsuariosActivosHoy() {
         LocalDateTime inicio = LocalDateTime.now().toLocalDate().atStartOfDay();
         LocalDateTime fin = LocalDateTime.now().toLocalDate().atTime(23, 59, 59);
-        return jpa.countDistinctUsuarioIdByFechaHoraBetween(inicio, fin);
+        // NORMALIZADO 3NF: Usa JOIN con membresias
+        return jpa.countDistinctUsuarioIdByFechaHoraBetweenViaJoin(inicio, fin);
     }
 
     @Override
     public Long contarPromedioMensual() {
         var lista = jpa.obtenerConteosMensuales();
-        if (lista.isEmpty()) return 0L;
+        if (lista.isEmpty())
+            return 0L;
 
         long suma = lista.stream().mapToLong(v -> v).sum();
         return suma / lista.size();
@@ -120,12 +137,14 @@ public class AsistenciaRepositoryAdapter implements AsistenciaRepositoryPort {
 
     @Override
     public Long contarUsuariosUnicosPorMes(int año, int mes) {
-        return jpa.countDistinctUsuarioIdByYearAndMonth(año, mes);
+        // NORMALIZADO 3NF: Usa JOIN con membresias
+        return jpa.countDistinctUsuarioIdByYearAndMonthViaJoin(año, mes);
     }
 
     @Override
     public int contarAsistenciasMes(Long usuarioId, int año, int mes) {
-        return jpa.countByUsuarioIdAndYearAndMonth(usuarioId, año, mes);
+        // NORMALIZADO 3NF: Usa JOIN con membresias
+        return jpa.countByUsuarioIdAndYearAndMonthViaJoin(usuarioId, año, mes);
     }
 
     private void actualizarEntityDesdeDomain(AsistenciaEntity entity, Asistencia domain) {
@@ -134,10 +153,13 @@ public class AsistenciaRepositoryAdapter implements AsistenciaRepositoryPort {
         entity.setFechaActualizacion(domain.getFechaActualizacion());
     }
 
+    /**
+     * Convierte Entity a Domain - NORMALIZADO 3NF
+     * (sin usuarioId directo, se obtiene vía membresía)
+     */
     private Asistencia toDomain(AsistenciaEntity entity) {
         return Asistencia.builder()
                 .id(entity.getId())
-                .usuarioId(entity.getUsuarioId())
                 .membresiaId(entity.getMembresiaId())
                 .fechaHora(entity.getFechaHora())
                 .tipo(entity.getTipo())
@@ -148,10 +170,13 @@ public class AsistenciaRepositoryAdapter implements AsistenciaRepositoryPort {
                 .build();
     }
 
+    /**
+     * Convierte Domain a Entity - NORMALIZADO 3NF
+     * (sin usuarioId directo)
+     */
     private AsistenciaEntity toEntity(Asistencia domain) {
         return AsistenciaEntity.builder()
                 .id(domain.getId())
-                .usuarioId(domain.getUsuarioId())
                 .membresiaId(domain.getMembresiaId())
                 .fechaHora(domain.getFechaHora())
                 .tipo(domain.getTipo())

@@ -36,12 +36,15 @@ public class WebSecurityConfig {
                 http
                                 .cors(cors -> cors.configure(http))
                                 .csrf(csrf -> csrf.disable())
+                                // Permitir frames para H2 Console
+                                .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
                                 .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .authorizeHttpRequests(authz -> authz
                                                 // Endpoints públicos
                                                 .requestMatchers("/api/auth/**", "/api/health/**", "/api/info/**",
-                                                                "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
+                                                                "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
+                                                                "/h2-console/**", "/actuator/**")
                                                 .permitAll()
                                                 // Permitir acceso público a planes (sin login) - GET only
                                                 .requestMatchers("/api/planes/activos", "/api/planes/destacados")

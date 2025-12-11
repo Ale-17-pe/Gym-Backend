@@ -5,6 +5,10 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
+/**
+ * Entidad de asistencias - NORMALIZADA (3NF)
+ * El campo usuario_id se obtiene de la membresía relacionada.
+ */
 @Entity
 @Table(name = "asistencias")
 @Getter
@@ -18,8 +22,7 @@ public class AsistenciaEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private Long usuarioId;
+    // ELIMINADO por 3NF: usuario_id (se obtiene de membresias)
 
     @Column(nullable = false)
     private Long membresiaId;

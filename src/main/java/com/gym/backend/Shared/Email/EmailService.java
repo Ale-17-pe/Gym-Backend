@@ -1,5 +1,7 @@
 package com.gym.backend.Shared.Email;
 
+import com.gym.backend.Comprobante.Application.Dto.DatosComprobante;
+import com.gym.backend.Comprobante.Domain.Services.ComprobantePdfService;
 import com.gym.backend.Pago.Application.Dto.PagoDTO;
 import com.gym.backend.Pago.Application.Mapper.PagoMapper;
 import com.gym.backend.Pago.Domain.Pago;
@@ -8,6 +10,7 @@ import com.gym.backend.Planes.Application.Dto.PlanDTO;
 import com.gym.backend.Planes.Application.Mapper.PlanMapper;
 import com.gym.backend.Planes.Domain.Plan;
 import com.gym.backend.Planes.Domain.PlanRepositoryPort;
+import com.gym.backend.Qr.Domain.QrUseCase;
 import com.gym.backend.Usuarios.Application.Dto.UsuarioDTO;
 import com.gym.backend.Usuarios.Application.Mapper.UsuarioMapper;
 import com.gym.backend.Usuarios.Domain.Usuario;
@@ -16,13 +19,15 @@ import com.gym.backend.Membresias.Domain.Membresia;
 import com.gym.backend.Membresias.Domain.MembresiaRepositoryPort;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Base64;
 
 @Service
 public class EmailService {
@@ -51,6 +56,12 @@ public class EmailService {
     @Autowired
     private MembresiaRepositoryPort membresiaRepository;
 
+    @Autowired
+    private QrUseCase qrUseCase;
+
+    @Autowired
+    private ComprobantePdfService comprobantePdfService;
+
     private static final String REMITENTE = "AresFitness <noreply@aresfitness.com>";
 
     /**
@@ -70,7 +81,7 @@ public class EmailService {
     }
 
     /**
-     * Envía comprobante de pago confirmado
+     * Envía comprobante de pago confirmado con QR embebido y PDF adjunto
      */
     public void enviarComprobantePago(Long pagoId) {
         try {
@@ -95,47 +106,25 @@ public class EmailService {
             }
             PlanDTO plan = planMapper.toDTO(planDomain);
 
-            String asunto = "💳 Código de Pago - AresFitness";
+            // Generar QR en base64
+            String qrBase64 = "";
+            try {
+                byte[] qrBytes = qrUseCase.generarQRBytes(pago.getCodigoPago());
+                qrBase64 = Base64.getEncoder().encodeToString(qrBytes);
+            } catch (Exception qrError) {
+                System.err.println("⚠️ No se pudo generar QR: " + qrError.getMessage());
+            }
 
-            // Email con plantilla HTML (sin QR por ahora)
-            String contenidoHTML = String.format(
-                    """
-                            <!DOCTYPE html>
-                            <html>
-                            <body style="font-family: Arial; background: #0a0a0a; color: #fff; padding: 20px;">
-                                <div style="max-width: 600px; margin: 0 auto; background: #1a1a1a; padding: 40px; border-radius: 10px;">
-                                    <h1 style="color: #FFD500;">💳 Código de Pago Generado</h1>
-                                    <p>Hola <strong>%s %s</strong>,</p>
-                                    <p>Tu código de pago ha sido generado exitosamente:</p>
+            String asunto = "💳 Comprobante de Pago - AresFitness";
 
-                                    <div style="background: #FFD500; color: #000; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
-                                        <h2 style="margin: 0; font-size: 32px; letter-spacing: 4px;">%s</h2>
-                                    </div>
-
-                                    <h3 style="color: #FFD500;">📋 Detalles:</h3>
-                                    <ul style="line-height: 2;">
-                                        <li><strong>Plan:</strong> %s</li>
-                                        <li><strong>Monto:</strong> S/ %.2f</li>
-                                        <li><strong>Método:</strong> %s</li>
-                                    </ul>
-
-                                    <p style="background: rgba(255,213,0,0.1); padding: 15px; border-left: 4px solid #FFD500;">
-                                        ⚠️ <strong>Importante:</strong> Presenta este código en recepción para confirmar tu pago.
-                                    </p>
-
-                                    <p style="color: #888; font-size: 12px; margin-top: 30px;">
-                                        © 2024 AresFitness - Tu mejor versión
-                                    </p>
-                                </div>
-                            </body>
-                            </html>
-                            """,
-                    usuario.getNombre(),
-                    usuario.getApellido(),
-                    pago.getCodigoPago(),
+            // Email con plantilla HTML incluyendo QR
+            String contenidoHTML = EmailTemplates.getPaymentReceiptEmailTemplate(
+                    usuario.getNombre() + " " + usuario.getApellido(),
                     plan.getNombrePlan(),
                     pago.getMonto(),
-                    pago.getMetodoPago());
+                    pago.getCodigoPago(),
+                    qrBase64,
+                    pago.getMetodoPago().toString());
 
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -143,9 +132,39 @@ public class EmailService {
             helper.setTo(usuario.getEmail());
             helper.setSubject(asunto);
             helper.setText(contenidoHTML, true);
-            mailSender.send(message);
 
-            System.out.println("✅ Email de pago enviado a: " + usuario.getEmail());
+            // Generar y adjuntar PDF del comprobante
+            try {
+                DatosComprobante datosComprobante = DatosComprobante.builder()
+                        .nombreGimnasio("AresFitness")
+                        .direccionGimnasio("Av. Principal 123, Lima")
+                        .rucGimnasio("20123456789")
+                        .telefonoGimnasio("+51 999 888 777")
+                        .numeroComprobante(String.format("CP-%06d", pagoId))
+                        .nombreCliente(usuario.getNombre() + " " + usuario.getApellido())
+                        .documentoCliente(usuario.getDni())
+                        .conceptoPago("Membresía " + plan.getNombrePlan())
+                        .subtotal(BigDecimal.valueOf(pago.getMonto()))
+                        .igv(BigDecimal.valueOf(pago.getMonto() * 0.18))
+                        .total(BigDecimal.valueOf(pago.getMonto() * 1.18))
+                        .metodoPago(pago.getMetodoPago().toString())
+                        .codigoPago(pago.getCodigoPago())
+                        .fechaEmision(LocalDateTime.now())
+                        .pagoId(pagoId)
+                        .build();
+
+                byte[] pdfBytes = comprobantePdfService.generarComprobantePDF(datosComprobante);
+                helper.addAttachment("Comprobante_" + pago.getCodigoPago() + ".pdf",
+                        new ByteArrayResource(pdfBytes));
+                System.out.println("📄 PDF adjuntado al email");
+            } catch (Exception pdfError) {
+                System.err.println("⚠️ No se pudo adjuntar PDF: " + pdfError.getMessage());
+                // Continuar enviando el email sin el PDF
+            }
+
+            mailSender.send(message);
+            System.out.println("✅ Email de comprobante enviado a: " + usuario.getEmail());
+
         } catch (Exception e) {
             System.err.println("❌ Error enviando email de pago: " + e.getMessage());
             e.printStackTrace();
@@ -232,6 +251,30 @@ public class EmailService {
     }
 
     /**
+     * Envía el código de verificación de email para nuevos usuarios
+     */
+    public void sendEmailVerificationCode(String toEmail, String code) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(REMITENTE);
+            helper.setTo(toEmail);
+            helper.setSubject("📧 Verifica tu Email - AresFitness");
+
+            String htmlContent = EmailTemplates.getEmailVerificationTemplate(code);
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+            System.out.println("✅ Email de verificación enviado a: " + toEmail);
+
+        } catch (Exception e) {
+            System.err.println("❌ Error enviando email de verificación: " + e.getMessage());
+            displayCodeInConsole(toEmail, code);
+        }
+    }
+
+    /**
      * Muestra el código en consola (fallback cuando falla el email)
      */
     private void displayCodeInConsole(String email, String code) {
@@ -293,6 +336,32 @@ public class EmailService {
 
         } catch (Exception e) {
             System.err.println("❌ Error enviando email de felicitaciones: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Envía un email de felicitación de cumpleaños
+     */
+    public void enviarFelicitacionCumpleanos(Usuario usuario) {
+        try {
+            String asunto = "🎂 ¡Feliz Cumpleaños " + usuario.getNombre() + "! - AresFitness";
+            String contenidoHTML = EmailTemplates.getBirthdayEmailTemplate(
+                    usuario.getNombre(),
+                    50); // Puntos de cumpleaños
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(REMITENTE);
+            helper.setTo(usuario.getEmail());
+            helper.setSubject(asunto);
+            helper.setText(contenidoHTML, true);
+            mailSender.send(message);
+
+            System.out.println("🎂 Email de cumpleaños enviado a: " + usuario.getEmail());
+
+        } catch (Exception e) {
+            System.err.println("❌ Error enviando email de cumpleaños: " + e.getMessage());
             e.printStackTrace();
         }
     }

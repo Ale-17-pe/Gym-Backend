@@ -24,6 +24,8 @@ public interface AsistenciaRepositoryPort {
 
     List<Asistencia> listarPorRangoFechas(LocalDateTime inicio, LocalDateTime fin);
 
+    List<Asistencia> listarPorUsuarioYFecha(Long usuarioId, LocalDateTime inicio, LocalDateTime fin);
+
     boolean existeEntradaHoy(Long usuarioId, LocalDateTime inicio, LocalDateTime fin);
 
     boolean existeSalidaHoy(Long usuarioId, LocalDateTime inicio, LocalDateTime fin);

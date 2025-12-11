@@ -114,6 +114,7 @@ public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
                 .rol(entity.getRol())
                 .activo(entity.getActivo())
                 .fechaNacimiento(entity.getFechaNacimiento())
+                .emailVerificado(entity.getEmailVerificado())
                 .build();
     }
 
@@ -131,6 +132,7 @@ public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
                 .rol(domain.getRol())
                 .activo(domain.getActivo())
                 .fechaNacimiento(domain.getFechaNacimiento())
+                .emailVerificado(domain.getEmailVerificado())
                 .build();
     }
 }

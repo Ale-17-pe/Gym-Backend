@@ -7,6 +7,10 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+/**
+ * Modelo de dominio para Asistencia - NORMALIZADO (3NF)
+ * El usuario_id se obtiene de la membresía relacionada.
+ */
 @Getter
 @Setter
 @Builder
@@ -14,8 +18,8 @@ import java.time.LocalDateTime;
 public class Asistencia {
     // Atributos
     private Long id;
-    private Long usuarioId;
-    private Long membresiaId; // Nueva relación con membresía
+    // ELIMINADO por 3NF: usuarioId (se obtiene de membresias)
+    private Long membresiaId;
     private LocalDateTime fechaHora;
     private String tipo; // ENTRADA, SALIDA
     private String estado; // REGISTRADA, CANCELADA

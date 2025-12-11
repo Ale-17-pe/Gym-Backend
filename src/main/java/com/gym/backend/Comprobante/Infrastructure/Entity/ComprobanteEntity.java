@@ -6,6 +6,10 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * Entidad de comprobantes - NORMALIZADA (3NF)
+ * El campo usuario_id se obtiene del pago relacionado.
+ */
 @Entity
 @Table(name = "comprobantes")
 @Getter
@@ -24,8 +28,7 @@ public class ComprobanteEntity {
     @Column(nullable = false)
     private Long pagoId;
 
-    @Column(nullable = false)
-    private Long usuarioId;
+    // ELIMINADO por 3NF: usuario_id (se obtiene de pagos)
 
     @Column(nullable = false)
     private LocalDateTime fechaEmision;

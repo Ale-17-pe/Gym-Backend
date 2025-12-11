@@ -5,6 +5,10 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
+/**
+ * Entidad de historial de membresías - NORMALIZADA (3NF)
+ * Los campos usuario_id, plan_id se obtienen de la membresía relacionada.
+ */
 @Entity
 @Table(name = "historial_membresias")
 @Getter
@@ -21,11 +25,7 @@ public class HistorialMembresiaEntity {
     @Column(nullable = false)
     private Long membresiaId;
 
-    @Column(nullable = false)
-    private Long usuarioId;
-
-    @Column(nullable = false)
-    private Long planId;
+    // ELIMINADOS por 3NF: usuario_id, plan_id (se obtienen de membresias)
 
     @Column(nullable = false, length = 50)
     private String accion;

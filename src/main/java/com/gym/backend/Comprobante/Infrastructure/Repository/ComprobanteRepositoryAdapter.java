@@ -10,6 +10,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Adapter para repositorio de Comprobantes - NORMALIZADO (3NF)
+ */
 @Component
 @RequiredArgsConstructor
 public class ComprobanteRepositoryAdapter implements ComprobanteRepositoryPort {
@@ -40,7 +43,8 @@ public class ComprobanteRepositoryAdapter implements ComprobanteRepositoryPort {
 
     @Override
     public List<Comprobante> listarPorUsuario(Long usuarioId) {
-        return jpaRepository.findByUsuarioIdOrderByFechaEmisionDesc(usuarioId)
+        // NORMALIZADO 3NF: Usa JOIN con pagos para obtener usuario_id
+        return jpaRepository.findByUsuarioIdViaJoin(usuarioId)
                 .stream()
                 .map(mapper::toDomain)
                 .collect(Collectors.toList());

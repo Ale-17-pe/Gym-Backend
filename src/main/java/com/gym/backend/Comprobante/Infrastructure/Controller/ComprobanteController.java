@@ -28,6 +28,7 @@ public class ComprobanteController {
 
     private final ComprobanteUseCase useCase;
     private final ComprobanteMapper mapper;
+    private final com.gym.backend.Usuarios.Domain.UsuarioUseCase usuarioUseCase;
 
     /**
      * Genera un comprobante para un pago confirmado
@@ -155,13 +156,15 @@ public class ComprobanteController {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication != null && authentication
-                    .getPrincipal() instanceof org.springframework.security.core.userdetails.UserDetails) {
-                // TODO: Obtener ID del usuario a partir del username
-                return 1L; // Fallback temporal
+                    .getPrincipal() instanceof org.springframework.security.core.userdetails.UserDetails userDetails) {
+                String email = userDetails.getUsername();
+                var usuario = usuarioUseCase.obtenerPorEmail(email);
+                return usuario.getId();
             }
+            log.warn("No se encontró autenticación válida, usando ID por defecto");
             return 1L; // Fallback
         } catch (Exception e) {
-            log.warn("No se pudo obtener el usuario actual, usando ID por defecto");
+            log.warn("No se pudo obtener el usuario actual: {}", e.getMessage());
             return 1L;
         }
     }

@@ -11,20 +11,36 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Repositorio JPA para HistorialMembresias - NORMALIZADO (3NF)
+ * Las consultas por usuario_id ahora requieren JOIN con membresias.
+ */
 public interface HistorialMembresiaJpaRepository extends JpaRepository<HistorialMembresiaEntity, Long> {
 
-    List<HistorialMembresiaEntity> findByUsuarioId(Long usuarioId);
-    Page<HistorialMembresiaEntity> findByUsuarioId(Long usuarioId, Pageable pageable);
+    // NORMALIZADO 3NF: Buscar historial por usuario_id vía JOIN con membresias
+    @Query("SELECT h FROM HistorialMembresiaEntity h " +
+            "JOIN MembresiaEntity m ON h.membresiaId = m.id " +
+            "WHERE m.usuarioId = :usuarioId")
+    List<HistorialMembresiaEntity> findByUsuarioIdViaJoin(@Param("usuarioId") Long usuarioId);
+
+    @Query("SELECT h FROM HistorialMembresiaEntity h " +
+            "JOIN MembresiaEntity m ON h.membresiaId = m.id " +
+            "WHERE m.usuarioId = :usuarioId")
+    Page<HistorialMembresiaEntity> findByUsuarioIdViaJoin(@Param("usuarioId") Long usuarioId, Pageable pageable);
+
     List<HistorialMembresiaEntity> findByMembresiaId(Long membresiaId);
+
     List<HistorialMembresiaEntity> findByAccion(String accion);
+
     List<HistorialMembresiaEntity> findByFechaCambioBetween(LocalDateTime inicio, LocalDateTime fin);
 
     Optional<HistorialMembresiaEntity> findTopByMembresiaIdOrderByFechaCambioDesc(Long membresiaId);
 
-    @Query("SELECT h FROM HistorialMembresiaEntity h ORDER BY h.fechaCambio DESC LIMIT :limite")
-    List<HistorialMembresiaEntity> findTopNByOrderByFechaCambioDesc(@Param("limite") int limite);
+    @Query("SELECT h FROM HistorialMembresiaEntity h ORDER BY h.fechaCambio DESC")
+    List<HistorialMembresiaEntity> findTopN(Pageable pageable);
 
     Long countByFechaCambioBetween(LocalDateTime inicio, LocalDateTime fin);
+
     Long countByAccion(String accion);
 
     @Query("SELECT COUNT(h) FROM HistorialMembresiaEntity h WHERE YEAR(h.fechaCambio) = :year AND MONTH(h.fechaCambio) = :month")
@@ -32,6 +48,6 @@ public interface HistorialMembresiaJpaRepository extends JpaRepository<Historial
 
     @Query("SELECT COUNT(h) FROM HistorialMembresiaEntity h WHERE h.accion = :accion AND YEAR(h.fechaCambio) = :year AND MONTH(h.fechaCambio) = :month")
     Long countByAccionAndYearAndMonth(@Param("accion") String accion,
-                                      @Param("year") int year,
-                                      @Param("month") int month);
+            @Param("year") int year,
+            @Param("month") int month);
 }

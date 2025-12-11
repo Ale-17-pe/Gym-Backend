@@ -1,6 +1,5 @@
 package com.gym.backend.Pago.Domain.Services;
 
-import com.gym.backend.HistorialPagos.Domain.HistorialPagoUseCase;
 import com.gym.backend.Membresias.Domain.Enum.EstadoMembresia;
 import com.gym.backend.Membresias.Domain.Membresia;
 import com.gym.backend.Membresias.Domain.MembresiaUseCase;
@@ -8,12 +7,10 @@ import com.gym.backend.Notificacion.Application.NotificacionService;
 import com.gym.backend.Notificacion.Domain.TipoNotificacion;
 import com.gym.backend.Pago.Application.Dto.CrearPagoRequest;
 import com.gym.backend.Pago.Application.Mapper.PagoMapper;
-import com.gym.backend.Pago.Domain.Pago;
-import com.gym.backend.Pago.Domain.PagoUseCase;
-import com.gym.backend.PaymentCode.Domain.PaymentCode;
+import com.gym.backend.Pago.Domain.*;
+import com.gym.backend.PaymentCode.Domain.*;
 import com.gym.backend.PaymentCode.Domain.PaymentCodeUseCase;
-import com.gym.backend.Planes.Domain.Plan;
-import com.gym.backend.Planes.Domain.PlanUseCase;
+import com.gym.backend.Planes.Domain.*;
 import com.gym.backend.Shared.Email.EmailService;
 import com.gym.backend.Usuarios.Application.Dto.UsuarioDTO;
 import com.gym.backend.Usuarios.Application.Mapper.UsuarioMapper;
@@ -38,11 +35,12 @@ public class PagoOrquestacionService {
     private final MembresiaUseCase membresiaUseCase;
     private final PlanUseCase planUseCase;
     private final UsuarioUseCase usuarioUseCase;
-    private final HistorialPagoUseCase historialPago;
     private final PagoMapper pagoMapper;
     private final EmailService emailService;
     private final NotificacionService notificacionService;
     private final UsuarioMapper usuarioMapper;
+    private final com.gym.backend.Fidelidad.Application.PuntosFidelidadUseCase puntosFidelidadUseCase;
+    private final com.gym.backend.Referidos.Application.ReferidoUseCase referidoUseCase;
 
     @Transactional
     public ProcesoPagoResponse iniciarProcesoPago(CrearPagoRequest request) {
@@ -54,14 +52,8 @@ public class PagoOrquestacionService {
             Pago pago = pagoMapper.toDomainFromCreateRequest(request);
             Pago pagoRegistrado = pagoUseCase.registrar(pago);
 
-            historialPago.registrarCambioAutomatico(
-                    pagoRegistrado.getId(),
-                    pagoRegistrado.getUsuarioId(),
-                    pagoRegistrado.getPlanId(),
-                    pagoRegistrado.getMonto(),
-                    null,
-                    "PENDIENTE",
-                    "Pago iniciado");
+            // NOTA: El registro en historial ya se realiza en pagoUseCase.registrar()
+            // No es necesario duplicar aquí
 
             PaymentCode paymentCode = paymentCodeUseCase.generarParaPago(pagoRegistrado.getId());
             pagoUseCase.asignarCodigo(pagoRegistrado.getId(), paymentCode.getCodigo());
@@ -154,14 +146,8 @@ public class PagoOrquestacionService {
 
             paymentCodeUseCase.marcarComoUsado(paymentCode.getId());
 
-            historialPago.registrarCambioAutomatico(
-                    pagoConfirmado.getId(),
-                    pagoConfirmado.getUsuarioId(),
-                    pagoConfirmado.getPlanId(),
-                    pagoConfirmado.getMonto(),
-                    pago.getEstado().name(),
-                    "CONFIRMADO",
-                    "Confirmación de pago");
+            // NOTA: El registro en historial ya se realiza en pagoUseCase.confirmar()
+            // No es necesario duplicar aquí
 
             crearOActualizarMembresia(pagoConfirmado);
 
@@ -180,6 +166,25 @@ public class PagoOrquestacionService {
                         "Tu pago ha sido confirmado y tu membresía está activa.");
             } catch (Exception e) {
                 log.error("❌ Error enviando email/notificación de felicitaciones: {}", e.getMessage());
+            }
+
+            // Otorgar puntos de fidelidad por la compra
+            try {
+                puntosFidelidadUseCase.otorgarPuntosPorCompra(
+                        pagoConfirmado.getUsuarioId(),
+                        pagoConfirmado.getId(),
+                        pagoConfirmado.getMonto());
+                log.info("🎯 Puntos otorgados por compra de S/{} al usuario: {}",
+                        pagoConfirmado.getMonto(), pagoConfirmado.getUsuarioId());
+            } catch (Exception e) {
+                log.warn("⚠️ No se pudieron otorgar puntos por compra: {}", e.getMessage());
+            }
+
+            // Completar referido si es el primer pago del usuario
+            try {
+                referidoUseCase.completarReferido(pagoConfirmado.getUsuarioId(), pagoConfirmado.getId());
+            } catch (Exception e) {
+                log.warn("⚠️ No se pudo completar referido: {}", e.getMessage());
             }
 
             log.info("Pago confirmado exitosamente - Pago ID: {}, Usuario: {}", pagoConfirmado.getId(),

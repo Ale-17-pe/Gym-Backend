@@ -299,6 +299,110 @@ public class EmailTemplates {
     }
 
     /**
+     * Plantilla HTML para verificación de email de nuevos usuarios
+     */
+    public static String getEmailVerificationTemplate(String code) {
+        return """
+                <!DOCTYPE html>
+                <html lang="es">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Verifica tu Email - AresFitness</title>
+                </head>
+                <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0a0a0a;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%%" style="background-color: #0a0a0a;">
+                        <tr>
+                            <td style="padding: 40px 20px;">
+                                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%%" style="max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #1a1a1a 0%%, #0d0d0d 100%%); border-radius: 16px; overflow: hidden; box-shadow: 0 10px 40px rgba(255, 213, 0, 0.1);">
+
+                                    <!-- Header -->
+                                    <tr>
+                                        <td style="background: linear-gradient(135deg, #FFD500 0%%, #FFA500 100%%); padding: 40px 30px; text-align: center;">
+                                            <h1 style="margin: 0; color: #000000; font-size: 36px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;">
+                                                ⚡ ARES<span style="color: #FF0000;">FITNESS</span>
+                                            </h1>
+                                            <p style="margin: 10px 0 0 0; color: #000000; font-size: 14px; font-weight: 600; letter-spacing: 1px;">
+                                                TU MEJOR VERSIÓN
+                                            </p>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Contenido -->
+                                    <tr>
+                                        <td style="padding: 50px 40px; text-align: center;">
+                                            <!-- Icono -->
+                                            <div style="margin-bottom: 30px;">
+                                                <div style="display: inline-block; background: linear-gradient(135deg, #FFD500 0%%, #FFA500 100%%); width: 80px; height: 80px; border-radius: 50%%; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(255, 213, 0, 0.3);">
+                                                    <span style="font-size: 40px;">📧</span>
+                                                </div>
+                                            </div>
+
+                                            <h2 style="margin: 0 0 20px 0; color: #FFFFFF; font-size: 28px; font-weight: 700;">
+                                                ¡Verifica tu Email!
+                                            </h2>
+
+                                            <p style="margin: 0 0 40px 0; color: #CCCCCC; font-size: 16px; line-height: 1.6;">
+                                                ¡Bienvenido a AresFitness! 🎉<br>
+                                                Para completar tu registro, ingresa el siguiente código de verificación:
+                                            </p>
+
+                                            <!-- Código -->
+                                            <div style="background: linear-gradient(135deg, #FFD500 0%%, #FFA500 100%%); border-radius: 12px; padding: 30px; margin: 0 auto 40px auto; max-width: 300px; box-shadow: 0 8px 24px rgba(255, 213, 0, 0.2);">
+                                                <div style="font-size: 48px; font-weight: 800; color: #000000; letter-spacing: 8px; font-family: 'Courier New', monospace;">
+                                                    %s
+                                                </div>
+                                            </div>
+
+                                            <!-- Expiración -->
+                                            <div style="background: rgba(255, 0, 0, 0.1); border-left: 4px solid #FF0000; padding: 20px; margin: 0 0 30px 0; text-align: left; border-radius: 8px;">
+                                                <p style="margin: 0; color: #FFFFFF; font-size: 14px; line-height: 1.6;">
+                                                    ⏱️ <strong>Importante:</strong> Este código expirará en <strong style="color: #FFD500;">30 minutos</strong>.
+                                                </p>
+                                            </div>
+
+                                            <!-- Beneficios -->
+                                            <div style="background: rgba(255, 213, 0, 0.05); border: 1px solid rgba(255, 213, 0, 0.2); border-radius: 8px; padding: 20px; margin: 0 0 20px 0; text-align: left;">
+                                                <p style="margin: 0 0 10px 0; color: #FFD500; font-size: 14px; font-weight: 600;">
+                                                    🏋️ Al verificar tu email podrás:
+                                                </p>
+                                                <ul style="margin: 0; padding-left: 20px; color: #CCCCCC; font-size: 13px; line-height: 1.8;">
+                                                    <li>Acceder a todas las funciones de la app</li>
+                                                    <li>Recibir notificaciones importantes</li>
+                                                    <li>Recuperar tu contraseña si la olvidas</li>
+                                                </ul>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Footer -->
+                                    <tr>
+                                        <td style="background: #000000; padding: 30px 40px; text-align: center; border-top: 2px solid #FFD500;">
+                                            <p style="margin: 0 0 15px 0; color: #FFFFFF; font-size: 16px; font-weight: 600;">
+                                                💪 ¡Nos vemos en el gimnasio!
+                                            </p>
+                                            <p style="margin: 0 0 20px 0; color: #999999; font-size: 13px; line-height: 1.6;">
+                                                Si no creaste esta cuenta, puedes ignorar este mensaje.
+                                            </p>
+                                            <div style="border-top: 1px solid #333333; padding-top: 20px; margin-top: 20px;">
+                                                <p style="margin: 0; color: #666666; font-size: 12px;">
+                                                    © 2024 AresFitness. Todos los derechos reservados.
+                                                </p>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+                </html>
+                """
+                .formatted(code);
+    }
+
+    /**
      * Plantilla HTML para comprobante de pago
      */
     public static String getPaymentReceiptEmailTemplate(String nombreUsuario, String planNombre,
@@ -368,17 +472,9 @@ public class EmailTemplates {
                                                     </tr>
                                                     <tr>
                                                         <td style="padding: 12px 0; color: #AAAAAA; font-size: 14px; border-bottom: 1px solid rgba(255, 213, 0, 0.2);">
-                                                            <strong>Método de Pago:</strong>
-                                                        </td>
-                                                        <td style="padding: 12px 0; color: #FFFFFF; font-size: 14px; text-align: right; border-bottom: 1px solid rgba(255, 213, 0, 0.2);">
-                                                            %s
-                                                        </td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td style="padding: 12px 0; color: #AAAAAA; font-size: 14px;">
                                                             <strong>Código de Pago:</strong>
                                                         </td>
-                                                        <td style="padding: 12px 0; color: #FFD500; font-size: 16px; font-weight: bold; text-align: right; font-family: 'Courier New', monospace;">
+                                                        <td style="padding: 12px 0; color: #FFD500; font-size: 16px; font-weight: bold; text-align: right; border-bottom: 1px solid rgba(255, 213, 0, 0.2); font-family: 'Courier New', monospace;">
                                                             %s
                                                         </td>
                                                     </tr>
@@ -394,6 +490,12 @@ public class EmailTemplates {
                                                 <p style="margin: 15px 0 0 0; color: #666666; font-size: 12px;">
                                                     Presenta este código QR en recepción
                                                 </p>
+                                            </div>
+
+                                            <!-- Método de Pago -->
+                                            <div style="background: rgba(255, 213, 0, 0.05); border: 1px solid rgba(255, 213, 0, 0.3); border-radius: 12px; padding: 20px; margin: 0 0 30px 0; text-align: center;">
+                                                <p style="margin: 0; color: #AAAAAA; font-size: 14px;">Método de Pago</p>
+                                                <p style="margin: 5px 0 0 0; color: #FFFFFF; font-size: 18px; font-weight: bold;">%s</p>
                                             </div>
 
                                             <!-- Mensaje de Agradecimiento -->
@@ -428,7 +530,7 @@ public class EmailTemplates {
                 </body>
                 </html>
                 """
-                .formatted(nombreUsuario, planNombre, monto, metodoPago, codigoPago, qrCodeBase64);
+                .formatted(nombreUsuario, planNombre, monto, codigoPago, qrCodeBase64, metodoPago);
     }
 
     /**
@@ -527,5 +629,87 @@ public class EmailTemplates {
                 </html>
                 """
                 .formatted(nombreUsuario, planNombre, fechaInicio, fechaFin);
+    }
+
+    /**
+     * Plantilla HTML para email de cumpleaños
+     */
+    public static String getBirthdayEmailTemplate(String nombre, int puntos) {
+        return """
+                <!DOCTYPE html>
+                <html lang="es">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>¡Feliz Cumpleaños! - AresFitness</title>
+                </head>
+                <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0a0a0a;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%%" style="background-color: #0a0a0a;">
+                        <tr>
+                            <td style="padding: 40px 20px;">
+                                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%%" style="max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #1a1a1a 0%%, #0d0d0d 100%%); border-radius: 16px; overflow: hidden; box-shadow: 0 10px 40px rgba(255, 213, 0, 0.1);">
+
+                                    <!-- Header con Logo -->
+                                    <tr>
+                                        <td style="background: linear-gradient(135deg, #FFD500 0%%, #FFA500 100%%); padding: 40px 30px; text-align: center;">
+                                            <h1 style="margin: 0; color: #000000; font-size: 36px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;">
+                                                ⚡ ARES<span style="color: #FF0000;">FITNESS</span>
+                                            </h1>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Contenido Principal -->
+                                    <tr>
+                                        <td style="padding: 50px 40px; text-align: center;">
+                                            <!-- Icono de Cumpleaños -->
+                                            <div style="margin-bottom: 30px;">
+                                                <span style="font-size: 80px;">🎂</span>
+                                            </div>
+
+                                            <h2 style="margin: 0 0 20px 0; color: #FFD500; font-size: 32px; font-weight: 700;">
+                                                ¡Feliz Cumpleaños, %s!
+                                            </h2>
+
+                                            <p style="margin: 0 0 30px 0; color: #cccccc; font-size: 16px; line-height: 1.6;">
+                                                🎉 En este día tan especial, todo el equipo de <strong style="color: #FFD500;">AresFitness</strong>
+                                                te desea un muy feliz cumpleaños lleno de energía, salud y éxitos.
+                                            </p>
+
+                                            <!-- Regalo de Puntos -->
+                                            <div style="background: linear-gradient(135deg, #2a2a2a 0%%, #1a1a1a 100%%); padding: 30px; border-radius: 12px; margin: 30px 0; border: 1px solid #333;">
+                                                <p style="color: #ffffff; font-size: 18px; margin: 0 0 15px 0;">
+                                                    🎁 <strong>Como regalo especial:</strong>
+                                                </p>
+                                                <div style="background: linear-gradient(135deg, #FFD500 0%%, #FFA500 100%%); padding: 20px; border-radius: 8px;">
+                                                    <span style="color: #000000; font-size: 36px; font-weight: 800;">+%d PUNTOS</span>
+                                                </div>
+                                                <p style="color: #888888; font-size: 14px; margin: 15px 0 0 0;">
+                                                    Han sido acreditados automáticamente a tu cuenta
+                                                </p>
+                                            </div>
+
+                                            <p style="margin: 0; color: #cccccc; font-size: 16px; line-height: 1.6;">
+                                                ¡Disfruta tu día especial y sigue entrenando para alcanzar
+                                                <strong style="color: #FFD500;">tu mejor versión</strong>! 💪
+                                            </p>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Footer -->
+                                    <tr>
+                                        <td style="background-color: #0d0d0d; padding: 30px; text-align: center; border-top: 1px solid #333;">
+                                            <p style="margin: 0; color: #666666; font-size: 12px;">
+                                                © 2024 AresFitness. Todos los derechos reservados.
+                                            </p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+                </html>
+                """
+                .formatted(nombre, puntos);
     }
 }

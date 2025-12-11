@@ -12,6 +12,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Caso de uso para la gestión del historial de membresías - NORMALIZADO (3NF)
+ * Los campos usuarioId y planId se obtienen de la Membresía relacionada.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -31,11 +35,10 @@ public class HistorialMembresiaUseCase {
             throw new IllegalArgumentException("La acción es requerida");
         }
 
+        // NORMALIZADO 3NF: Sin campos redundantes (usuarioId, planId)
         HistorialMembresia historialCompleto = HistorialMembresia.builder()
                 .id(historial.getId())
                 .membresiaId(historial.getMembresiaId())
-                .usuarioId(historial.getUsuarioId())
-                .planId(historial.getPlanId())
                 .accion(historial.getAccion())
                 .estadoAnterior(historial.getEstadoAnterior())
                 .estadoNuevo(historial.getEstadoNuevo())
@@ -52,13 +55,14 @@ public class HistorialMembresiaUseCase {
         return guardado;
     }
 
-    public HistorialMembresia registrarCambioAutomatico(Long membresiaId, Long usuarioId, Long planId,
-                                                        String accion, String estadoAnterior, String estadoNuevo,
-                                                        String motivo) {
+    /**
+     * Registra un cambio automático en el historial de membresías.
+     * NORMALIZADO 3NF: Los parámetros usuarioId y planId ya no se almacenan.
+     */
+    public HistorialMembresia registrarCambioAutomatico(Long membresiaId, String accion,
+            String estadoAnterior, String estadoNuevo, String motivo) {
         HistorialMembresia historial = HistorialMembresia.builder()
                 .membresiaId(membresiaId)
-                .usuarioId(usuarioId)
-                .planId(planId)
                 .accion(accion)
                 .estadoAnterior(estadoAnterior)
                 .estadoNuevo(estadoNuevo)
@@ -83,15 +87,8 @@ public class HistorialMembresiaUseCase {
         return repo.listarPaginated(pageable);
     }
 
-    @Transactional(readOnly = true)
-    public List<HistorialMembresia> listarPorUsuario(Long usuarioId) {
-        return repo.listarPorUsuario(usuarioId);
-    }
-
-    @Transactional(readOnly = true)
-    public Page<HistorialMembresia> listarPorUsuarioPaginated(Long usuarioId, Pageable pageable) {
-        return repo.listarPorUsuarioPaginated(usuarioId, pageable);
-    }
+    // ELIMINADO 3NF: listarPorUsuario (requiere JOIN con Membresias)
+    // Usar listarPorMembresia para obtener historial de una membresía específica
 
     @Transactional(readOnly = true)
     public List<HistorialMembresia> listarPorMembresia(Long membresiaId) {
@@ -132,8 +129,7 @@ public class HistorialMembresiaUseCase {
                 "creaciones", creaciones,
                 "extensiones", extensiones,
                 "suspensiones", suspensiones,
-                "fechaConsulta", LocalDateTime.now()
-        );
+                "fechaConsulta", LocalDateTime.now());
     }
 
     public Map<String, Long> obtenerEstadisticasPorMes(int año, int mes) {

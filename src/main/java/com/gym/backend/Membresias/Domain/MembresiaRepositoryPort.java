@@ -1,6 +1,9 @@
 package com.gym.backend.Membresias.Domain;
 
 import com.gym.backend.Membresias.Domain.Enum.EstadoMembresia;
+import com.gym.backend.Shared.Domain.BaseCrudPort;
+import com.gym.backend.Shared.Domain.BaseListPort;
+import com.gym.backend.Shared.Domain.BaseStatsPort;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -8,22 +11,26 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-public interface MembresiaRepositoryPort {
-    Membresia guardar(Membresia membresia);
+/**
+ * Puerto del repositorio de Membresías.
+ * Extiende interfaces segregadas para cumplir con ISP:
+ * - BaseCrudPort: operaciones CRUD básicas
+ * - BaseListPort: operaciones de listado
+ * - BaseStatsPort: operaciones de estadísticas
+ */
+public interface MembresiaRepositoryPort extends BaseCrudPort<Membresia, Long>, BaseListPort<Membresia>, BaseStatsPort {
 
-    Membresia actualizar(Membresia membresia);
+    // ==================== BÚSQUEDAS ESPECÍFICAS ====================
 
-    Optional<Membresia> buscarPorId(Long id);
+    Optional<Membresia> buscarActivaPorUsuario(Long usuarioId);
 
-    List<Membresia> listar();
+    Optional<Membresia> buscarPorCodigoAcceso(String codigoAcceso);
 
-    Page<Membresia> listarPaginated(Pageable pageable);
+    // ==================== LISTADOS POR FILTRO ====================
 
     List<Membresia> listarPorUsuario(Long usuarioId);
 
     Page<Membresia> listarPorUsuarioPaginated(Long usuarioId, Pageable pageable);
-
-    Optional<Membresia> buscarActivaPorUsuario(Long usuarioId);
 
     List<Membresia> listarPorEstado(EstadoMembresia estado);
 
@@ -33,10 +40,7 @@ public interface MembresiaRepositoryPort {
 
     List<Membresia> buscarPorRangoFechas(LocalDate fechaInicio, LocalDate fechaFin);
 
-    Optional<Membresia> buscarPorCodigoAcceso(String codigoAcceso);
-
-    // Métodos para estadísticas
-    Long contarTotal();
+    // ==================== ESTADÍSTICAS ====================
 
     Long contarPorEstado(EstadoMembresia estado);
 

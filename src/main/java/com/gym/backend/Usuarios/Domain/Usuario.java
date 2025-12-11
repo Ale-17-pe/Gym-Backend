@@ -26,6 +26,8 @@ public class Usuario {
     private Rol rol;
     private Boolean activo;
     private java.time.LocalDate fechaNacimiento;
+    @Builder.Default
+    private Boolean emailVerificado = false;
 
     public void validar() {
         if (nombre == null || nombre.trim().isEmpty()) {
@@ -48,6 +50,14 @@ public class Usuario {
 
     public boolean esActivo() {
         return Boolean.TRUE.equals(activo);
+    }
+
+    public boolean tieneEmailVerificado() {
+        return Boolean.TRUE.equals(emailVerificado);
+    }
+
+    public void verificarEmail() {
+        this.emailVerificado = true;
     }
 
     public String getNombreCompleto() {

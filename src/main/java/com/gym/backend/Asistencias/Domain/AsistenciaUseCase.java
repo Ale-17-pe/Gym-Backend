@@ -1,5 +1,6 @@
 package com.gym.backend.Asistencias.Domain;
 
+import com.gym.backend.Asistencias.Application.RachaAsistenciaService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -18,6 +19,7 @@ public class AsistenciaUseCase {
 
     private final AsistenciaRepositoryPort repo;
     private final MembresiaValidatorPort membresiaValidator;
+    private final RachaAsistenciaService rachaAsistenciaService;
 
     public Asistencia registrarEntrada(Long usuarioId) {
         log.info("Registrando entrada para usuario: {}", usuarioId);
@@ -41,10 +43,9 @@ public class AsistenciaUseCase {
             throw new IllegalStateException("El usuario ya registró entrada hoy.");
         }
 
-        // Registrar entrada
+        // Registrar entrada - NORMALIZADO 3NF (sin usuarioId directo)
         Asistencia nueva = Asistencia.builder()
                 .id(null)
-                .usuarioId(usuarioId)
                 .membresiaId(membresia.getId())
                 .fechaHora(ahora)
                 .tipo("ENTRADA")
@@ -56,6 +57,14 @@ public class AsistenciaUseCase {
 
         Asistencia guardada = repo.registrar(nueva);
         log.info("Entrada registrada exitosamente para usuario: {}", usuarioId);
+
+        // Otorgar puntos por asistencia y verificar rachas
+        try {
+            rachaAsistenciaService.procesarAsistencia(usuarioId, guardada.getId());
+        } catch (Exception e) {
+            log.warn("No se pudieron procesar puntos de asistencia: {}", e.getMessage());
+        }
+
         return guardada;
     }
 
@@ -77,10 +86,9 @@ public class AsistenciaUseCase {
             throw new IllegalStateException("El usuario ya registró salida hoy.");
         }
 
-        // Registrar salida
+        // Registrar salida - NORMALIZADO 3NF (sin usuarioId directo)
         Asistencia salida = Asistencia.builder()
                 .id(null)
-                .usuarioId(usuarioId)
                 .membresiaId(entrada.getMembresiaId())
                 .fechaHora(ahora)
                 .tipo("SALIDA")

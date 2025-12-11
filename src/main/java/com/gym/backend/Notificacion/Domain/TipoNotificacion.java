@@ -5,7 +5,9 @@ public enum TipoNotificacion {
     MEMBRESIA_VENCIDA("Tu membresía ha vencido"),
     PAGO_CONFIRMADO("Pago confirmado exitosamente"),
     PAGO_PENDIENTE("Tienes un pago pendiente"),
-    BIENVENIDA("¡Bienvenido a AresFitness!");
+    BIENVENIDA("¡Bienvenido a AresFitness!"),
+    CUMPLEANOS("¡Feliz cumpleaños!"),
+    GENERAL("Notificación general");
 
     private final String descripcion;
 

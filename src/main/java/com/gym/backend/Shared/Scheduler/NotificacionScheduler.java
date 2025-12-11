@@ -1,22 +1,18 @@
 package com.gym.backend.Shared.Scheduler;
 
 import com.gym.backend.Membresias.Domain.Enum.EstadoMembresia;
-import com.gym.backend.Membresias.Domain.Membresia;
-import com.gym.backend.Membresias.Domain.MembresiaRepositoryPort;
+import com.gym.backend.Membresias.Domain.*;
 import com.gym.backend.Notificacion.Application.NotificacionService;
 import com.gym.backend.Notificacion.Domain.TipoNotificacion;
 import com.gym.backend.Planes.Application.Dto.PlanDTO;
 import com.gym.backend.Planes.Application.Mapper.PlanMapper;
-import com.gym.backend.Planes.Domain.Plan;
-import com.gym.backend.Planes.Domain.PlanRepositoryPort;
+import com.gym.backend.Planes.Domain.*;
 import com.gym.backend.Shared.Email.EmailService;
 import com.gym.backend.Usuarios.Application.Dto.UsuarioDTO;
 import com.gym.backend.Usuarios.Application.Mapper.UsuarioMapper;
-import com.gym.backend.Usuarios.Domain.Usuario;
-import com.gym.backend.Usuarios.Domain.UsuarioRepositoryPort;
+import com.gym.backend.Usuarios.Domain.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.*;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;

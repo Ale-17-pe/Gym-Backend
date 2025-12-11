@@ -23,7 +23,8 @@ public class CacheConfig {
         SimpleCacheManager cacheManager = new SimpleCacheManager();
         cacheManager.setCaches(Arrays.asList(
                 new ConcurrentMapCache("two-factor-codes"),
-                new ConcurrentMapCache("password-reset-codes")));
+                new ConcurrentMapCache("password-reset-codes"),
+                new ConcurrentMapCache("email-verification-codes")));
         return cacheManager;
     }
 }

@@ -5,6 +5,10 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * Modelo de dominio para Comprobante - NORMALIZADO (3NF)
+ * El usuario_id se obtiene del pago relacionado.
+ */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -14,7 +18,7 @@ public class Comprobante {
     private Long id;
     private String numeroComprobante;
     private Long pagoId;
-    private Long usuarioId;
+    // ELIMINADO por 3NF: usuarioId (se obtiene de pagos)
     private LocalDateTime fechaEmision;
     private BigDecimal subtotal;
     private BigDecimal igv;

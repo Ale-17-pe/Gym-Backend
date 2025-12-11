@@ -4,6 +4,10 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
+/**
+ * Modelo de dominio para Historial de Membresías - NORMALIZADO (3NF)
+ * Los datos de usuario_id, plan_id se obtienen de la membresía relacionada.
+ */
 @Getter
 @Setter
 @Builder
@@ -11,8 +15,7 @@ import java.time.LocalDateTime;
 public class HistorialMembresia {
     private Long id;
     private Long membresiaId;
-    private Long usuarioId;
-    private Long planId;
+    // ELIMINADOS por 3NF: usuarioId, planId (se obtienen de membresias)
     private String accion; // CREAR, EXTENDER, SUSPENDER, REACTIVAR, CANCELAR, VENCER
     private String estadoAnterior;
     private String estadoNuevo;

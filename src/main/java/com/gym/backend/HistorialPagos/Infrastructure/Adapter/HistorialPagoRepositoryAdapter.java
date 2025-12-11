@@ -13,6 +13,9 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Adapter para repositorio de Historial de Pagos - NORMALIZADO (3NF)
+ */
 @Component
 @RequiredArgsConstructor
 public class HistorialPagoRepositoryAdapter implements HistorialPagoRepositoryPort {
@@ -32,16 +35,6 @@ public class HistorialPagoRepositoryAdapter implements HistorialPagoRepositoryPo
     @Override
     public Page<HistorialPago> listarPaginated(Pageable pageable) {
         return jpa.findAll(pageable).map(this::toDomain);
-    }
-
-    @Override
-    public List<HistorialPago> listarPorUsuario(Long usuarioId) {
-        return jpa.findByUsuarioId(usuarioId).stream().map(this::toDomain).toList();
-    }
-
-    @Override
-    public Page<HistorialPago> listarPorUsuarioPaginated(Long usuarioId, Pageable pageable) {
-        return jpa.findByUsuarioId(usuarioId, pageable).map(this::toDomain);
     }
 
     @Override
@@ -110,9 +103,7 @@ public class HistorialPagoRepositoryAdapter implements HistorialPagoRepositoryPo
         return HistorialPago.builder()
                 .id(entity.getId())
                 .pagoId(entity.getPagoId())
-                .usuarioId(entity.getUsuarioId())
-                .planId(entity.getPlanId())
-                .monto(entity.getMonto())
+                // ELIMINADOS 3NF: usuarioId, planId, monto
                 .estadoAnterior(entity.getEstadoAnterior())
                 .estadoNuevo(entity.getEstadoNuevo())
                 .motivoCambio(entity.getMotivoCambio())
@@ -128,9 +119,7 @@ public class HistorialPagoRepositoryAdapter implements HistorialPagoRepositoryPo
         return HistorialPagoEntity.builder()
                 .id(domain.getId())
                 .pagoId(domain.getPagoId())
-                .usuarioId(domain.getUsuarioId())
-                .planId(domain.getPlanId())
-                .monto(domain.getMonto())
+                // ELIMINADOS 3NF: usuarioId, planId, monto
                 .estadoAnterior(domain.getEstadoAnterior())
                 .estadoNuevo(domain.getEstadoNuevo())
                 .motivoCambio(domain.getMotivoCambio())

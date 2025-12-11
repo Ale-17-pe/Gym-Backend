@@ -51,19 +51,10 @@ public class HistorialMembresiaController {
         return useCase.listarPaginated(pageable).map(mapper::toResponse);
     }
 
-    @GetMapping("/usuario/{usuarioId}")
-    public List<HistorialMembresiaResponse> listarPorUsuario(@PathVariable Long usuarioId) {
-        return useCase.listarPorUsuario(usuarioId).stream().map(mapper::toResponse).toList();
-    }
-
-    @GetMapping("/usuario/{usuarioId}/paginated")
-    public Page<HistorialMembresiaResponse> listarPorUsuarioPaginated(
-            @PathVariable Long usuarioId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        return useCase.listarPorUsuarioPaginated(usuarioId, pageable).map(mapper::toResponse);
-    }
+    // ELIMINADO 3NF: Los endpoints /usuario/{usuarioId} fueron removidos
+    // porque el historial de membresias ya no almacena usuario_id directamente.
+    // Para obtener el historial de un usuario, primero buscar sus membresías
+    // y luego consultar /membresia/{membresiaId} para cada membresía.
 
     @GetMapping("/membresia/{membresiaId}")
     public List<HistorialMembresiaResponse> listarPorMembresia(@PathVariable Long membresiaId) {
@@ -85,9 +76,7 @@ public class HistorialMembresiaController {
     @GetMapping("/ultimo-cambio/{membresiaId}")
     public ResponseEntity<HistorialMembresiaResponse> obtenerUltimoCambio(@PathVariable Long membresiaId) {
         var historial = useCase.obtenerUltimoCambio(membresiaId);
-        return historial != null ?
-                ResponseEntity.ok(mapper.toResponse(historial)) :
-                ResponseEntity.notFound().build();
+        return historial != null ? ResponseEntity.ok(mapper.toResponse(historial)) : ResponseEntity.notFound().build();
     }
 
     @GetMapping("/recientes")

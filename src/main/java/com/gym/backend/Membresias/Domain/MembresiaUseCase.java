@@ -44,11 +44,9 @@ public class MembresiaUseCase {
 
         Membresia guardada = repo.guardar(nueva);
 
-        // 🔥 Historial
+        // Historial - NORMALIZADO 3NF
         historialMembresiaUseCase.registrarCambioAutomatico(
                 guardada.getId(),
-                guardada.getUsuarioId(),
-                guardada.getPlanId(),
                 "CREAR",
                 null,
                 "ACTIVA",
@@ -68,8 +66,6 @@ public class MembresiaUseCase {
 
         historialMembresiaUseCase.registrarCambioAutomatico(
                 m.getId(),
-                m.getUsuarioId(),
-                m.getPlanId(),
                 "EXTENDER",
                 fechaAnterior.toString(),
                 m.getFechaFin().toString(),
@@ -89,8 +85,6 @@ public class MembresiaUseCase {
 
         historialMembresiaUseCase.registrarCambioAutomatico(
                 membresia.getId(),
-                membresia.getUsuarioId(),
-                membresia.getPlanId(),
                 "SUSPENDER",
                 estadoAnterior,
                 "SUSPENDIDA",
@@ -114,8 +108,6 @@ public class MembresiaUseCase {
 
         historialMembresiaUseCase.registrarCambioAutomatico(
                 membresia.getId(),
-                membresia.getUsuarioId(),
-                membresia.getPlanId(),
                 "REACTIVAR",
                 estadoAnterior,
                 "ACTIVA",
@@ -135,8 +127,6 @@ public class MembresiaUseCase {
 
         historialMembresiaUseCase.registrarCambioAutomatico(
                 membresia.getId(),
-                membresia.getUsuarioId(),
-                membresia.getPlanId(),
                 "CANCELAR",
                 estadoAnterior,
                 "CANCELADA",
@@ -216,8 +206,6 @@ public class MembresiaUseCase {
 
                 historialMembresiaUseCase.registrarCambioAutomatico(
                         membresia.getId(),
-                        membresia.getUsuarioId(),
-                        membresia.getPlanId(),
                         "VENCER",
                         estadoAnterior,
                         "VENCIDA",

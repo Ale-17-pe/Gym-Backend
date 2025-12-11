@@ -29,6 +29,8 @@ public class AuthController {
     private final UsuarioRepositoryPort usuarioRepository;
     private final com.gym.backend.Shared.PasswordReset.PasswordResetService passwordResetService;
     private final PasswordEncoder passwordEncoder;
+    private final com.gym.backend.Shared.Email.EmailVerificationService emailVerificationService;
+    private final com.gym.backend.Fidelidad.Application.PuntosFidelidadUseCase puntosFidelidadUseCase;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginCommand command) {
@@ -92,6 +94,27 @@ public class AuthController {
     public ResponseEntity<?> register(@Valid @RequestBody RegisterCommand command) {
         try {
             AuthResponse response = useCase.registrar(command);
+
+            // Enviar código de verificación de email automáticamente
+            try {
+                emailVerificationService.sendVerificationCode(command.email());
+                log.info("📧 Código de verificación enviado a: {}", command.email());
+            } catch (Exception emailError) {
+                log.warn("⚠️ No se pudo enviar email de verificación: {}", emailError.getMessage());
+            }
+
+            // Otorgar puntos de fidelidad por registro
+            try {
+                puntosFidelidadUseCase.otorgarPuntos(
+                        response.usuarioId(),
+                        com.gym.backend.Fidelidad.Domain.Enum.MotivoGanancia.REGISTRO,
+                        response.usuarioId(),
+                        "REGISTRO");
+                log.info("🎯 Puntos de bienvenida otorgados a usuario: {}", response.usuarioId());
+            } catch (Exception puntosError) {
+                log.warn("⚠️ No se pudieron otorgar puntos de registro: {}", puntosError.getMessage());
+            }
+
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (UsuarioDuplicateException e) {
             log.warn("Registro fallido - duplicado: {}", e.getMessage());
@@ -175,6 +198,55 @@ public class AuthController {
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(@RequestHeader("Authorization") String authHeader) {
         return ResponseEntity.ok().body(new MessageResponse("Refresh token no implementado"));
+    }
+
+    // ==================== VERIFICACIÓN DE EMAIL ====================
+
+    @PostMapping("/verify-email")
+    public ResponseEntity<?> verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
+        try {
+            boolean isValid = emailVerificationService.validateCode(request.email(), request.code());
+
+            if (!isValid) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ErrorResponse("Código inválido o expirado"));
+            }
+
+            // Marcar email como verificado
+            emailVerificationService.markEmailAsVerified(request.email());
+
+            log.info("✅ Email verificado exitosamente: {}", request.email());
+            return ResponseEntity.ok(new MessageResponse("Email verificado exitosamente"));
+
+        } catch (UsuarioNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ErrorResponse("Usuario no encontrado"));
+        } catch (Exception e) {
+            log.error("Error en verificación de email: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse("Error al verificar email"));
+        }
+    }
+
+    @PostMapping("/resend-verification")
+    public ResponseEntity<?> resendVerification(@Valid @RequestBody ResendVerificationRequest request) {
+        try {
+            emailVerificationService.resendVerificationCode(request.email());
+
+            log.info("📧 Código de verificación reenviado a: {}", request.email());
+            return ResponseEntity.ok(new MessageResponse("Código de verificación enviado"));
+
+        } catch (UsuarioNotFoundException e) {
+            // Por seguridad, no revelamos si el email existe o no
+            return ResponseEntity.ok(new MessageResponse("Si el email existe, recibirás un código de verificación"));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error reenviando verificación: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse("Error al enviar código"));
+        }
     }
 
     public record ErrorResponse(String message) {

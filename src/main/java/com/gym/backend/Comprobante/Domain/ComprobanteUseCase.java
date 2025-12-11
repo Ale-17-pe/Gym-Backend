@@ -110,11 +110,11 @@ public class ComprobanteUseCase {
         // Generar PDF
         byte[] pdfData = pdfService.generarComprobantePDF(datos);
 
-        // Crear y guardar comprobante
+        // Crear y guardar comprobante - NORMALIZADO 3NF (sin usuarioId)
         Comprobante comprobante = Comprobante.builder()
                 .numeroComprobante(numeroComprobante)
                 .pagoId(pagoId)
-                .usuarioId(cliente.getId())
+                // ELIMINADO 3NF: usuarioId (se obtiene vía pago -> membresia -> usuario)
                 .fechaEmision(datos.getFechaEmision())
                 .subtotal(subtotal)
                 .igv(igv)

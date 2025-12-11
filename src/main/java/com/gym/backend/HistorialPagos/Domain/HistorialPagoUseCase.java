@@ -12,6 +12,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Caso de uso para la gestión del historial de pagos - NORMALIZADO (3NF)
+ * Los campos usuarioId, planId y monto se obtienen del Pago relacionado.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -32,12 +36,10 @@ public class HistorialPagoUseCase {
             throw new IllegalArgumentException("El estado nuevo es requerido");
         }
 
+        // NORMALIZADO 3NF: Sin campos redundantes (usuarioId, planId, monto)
         HistorialPago historialCompleto = HistorialPago.builder()
                 .id(historial.getId())
                 .pagoId(historial.getPagoId())
-                .usuarioId(historial.getUsuarioId())
-                .planId(historial.getPlanId())
-                .monto(historial.getMonto())
                 .estadoAnterior(historial.getEstadoAnterior())
                 .estadoNuevo(historial.getEstadoNuevo())
                 .motivoCambio(historial.getMotivoCambio())
@@ -53,13 +55,14 @@ public class HistorialPagoUseCase {
         return guardado;
     }
 
-    public HistorialPago registrarCambioAutomatico(Long pagoId, Long usuarioId, Long planId, Double monto,
-            String estadoAnterior, String estadoNuevo, String motivo) {
+    /**
+     * Registra un cambio automático en el historial de pagos.
+     * NORMALIZADO 3NF: Los parámetros usuarioId, planId y monto ya no se almacenan.
+     */
+    public HistorialPago registrarCambioAutomatico(Long pagoId, String estadoAnterior,
+            String estadoNuevo, String motivo) {
         HistorialPago historial = HistorialPago.builder()
                 .pagoId(pagoId)
-                .usuarioId(usuarioId)
-                .planId(planId)
-                .monto(monto)
                 .estadoAnterior(estadoAnterior)
                 .estadoNuevo(estadoNuevo)
                 .motivoCambio(motivo)
@@ -83,15 +86,8 @@ public class HistorialPagoUseCase {
         return repo.listarPaginated(pageable);
     }
 
-    @Transactional(readOnly = true)
-    public List<HistorialPago> listarPorUsuario(Long usuarioId) {
-        return repo.listarPorUsuario(usuarioId);
-    }
-
-    @Transactional(readOnly = true)
-    public Page<HistorialPago> listarPorUsuarioPaginated(Long usuarioId, Pageable pageable) {
-        return repo.listarPorUsuarioPaginated(usuarioId, pageable);
-    }
+    // ELIMINADO 3NF: listarPorUsuario (requiere JOIN con Pagos y Membresias)
+    // Usar listarPorPago para obtener historial de un pago específico
 
     @Transactional(readOnly = true)
     public List<HistorialPago> listarPorPago(Long pagoId) {
@@ -144,8 +140,8 @@ public class HistorialPagoUseCase {
         map.put("totalCambios", totalCambios);
         map.put("confirmaciones", confirmaciones);
         map.put("rechazos", rechazos);
-        map.put("año", (long) año); // 🔥 convertir int → Long
-        map.put("mes", (long) mes); // 🔥 convertir int → Long
+        map.put("año", (long) año);
+        map.put("mes", (long) mes);
 
         return map;
     }
@@ -165,5 +161,4 @@ public class HistorialPagoUseCase {
                 })
                 .toList();
     }
-
 }

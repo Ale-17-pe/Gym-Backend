@@ -2,7 +2,7 @@ package com.gym.backend.Pago.Domain.Enum;
 
 public enum MetodoPago {
     TARJETA_CREDITO,
-    TARJETA_DEBITO,
+    TARJETA,
     EFECTIVO,
     TRANSFERENCIA_BANCARIA,
     PSE,

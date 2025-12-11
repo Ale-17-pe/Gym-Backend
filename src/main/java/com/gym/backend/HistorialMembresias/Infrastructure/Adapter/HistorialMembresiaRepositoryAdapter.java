@@ -6,12 +6,16 @@ import com.gym.backend.HistorialMembresias.Infrastructure.Entity.HistorialMembre
 import com.gym.backend.HistorialMembresias.Infrastructure.Jpa.HistorialMembresiaJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Adapter para repositorio de Historial de Membresías - NORMALIZADO (3NF)
+ */
 @Component
 @RequiredArgsConstructor
 public class HistorialMembresiaRepositoryAdapter implements HistorialMembresiaRepositoryPort {
@@ -33,15 +37,7 @@ public class HistorialMembresiaRepositoryAdapter implements HistorialMembresiaRe
         return jpa.findAll(pageable).map(this::toDomain);
     }
 
-    @Override
-    public List<HistorialMembresia> listarPorUsuario(Long usuarioId) {
-        return jpa.findByUsuarioId(usuarioId).stream().map(this::toDomain).toList();
-    }
-
-    @Override
-    public Page<HistorialMembresia> listarPorUsuarioPaginated(Long usuarioId, Pageable pageable) {
-        return jpa.findByUsuarioId(usuarioId, pageable).map(this::toDomain);
-    }
+    // ELIMINADO 3NF: listarPorUsuario (ya no hay usuarioId en historial_membresias)
 
     @Override
     public List<HistorialMembresia> listarPorMembresia(Long membresiaId) {
@@ -67,7 +63,7 @@ public class HistorialMembresiaRepositoryAdapter implements HistorialMembresiaRe
 
     @Override
     public List<HistorialMembresia> obtenerCambiosRecientes(int limite) {
-        return jpa.findTopNByOrderByFechaCambioDesc(limite).stream()
+        return jpa.findTopN(PageRequest.of(0, limite)).stream()
                 .map(this::toDomain)
                 .toList();
     }
@@ -108,8 +104,7 @@ public class HistorialMembresiaRepositoryAdapter implements HistorialMembresiaRe
         return HistorialMembresia.builder()
                 .id(entity.getId())
                 .membresiaId(entity.getMembresiaId())
-                .usuarioId(entity.getUsuarioId())
-                .planId(entity.getPlanId())
+                // ELIMINADOS 3NF: usuarioId, planId
                 .accion(entity.getAccion())
                 .estadoAnterior(entity.getEstadoAnterior())
                 .estadoNuevo(entity.getEstadoNuevo())
@@ -126,8 +121,7 @@ public class HistorialMembresiaRepositoryAdapter implements HistorialMembresiaRe
         return HistorialMembresiaEntity.builder()
                 .id(domain.getId())
                 .membresiaId(domain.getMembresiaId())
-                .usuarioId(domain.getUsuarioId())
-                .planId(domain.getPlanId())
+                // ELIMINADOS 3NF: usuarioId, planId
                 .accion(domain.getAccion())
                 .estadoAnterior(domain.getEstadoAnterior())
                 .estadoNuevo(domain.getEstadoNuevo())

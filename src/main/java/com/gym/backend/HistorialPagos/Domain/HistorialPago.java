@@ -7,6 +7,10 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+/**
+ * Modelo de dominio para Historial de Pagos - NORMALIZADO (3NF)
+ * Los datos de usuario_id, plan_id, monto se obtienen del pago relacionado.
+ */
 @Getter
 @Setter
 @Builder
@@ -14,12 +18,10 @@ import java.time.LocalDateTime;
 public class HistorialPago {
     private Long id;
     private Long pagoId;
-    private Long usuarioId;
-    private Long planId; // Nueva relación con plan
-    private Double monto;
+    // ELIMINADOS por 3NF: usuarioId, planId, monto (se obtienen de pagos)
     private String estadoAnterior;
     private String estadoNuevo;
-    private String motivoCambio; // Nuevo campo
+    private String motivoCambio;
     private String usuarioModificacion; // Quién realizó el cambio
     private String ipOrigen; // Para auditoría
     private LocalDateTime fechaCambio;
@@ -39,10 +41,19 @@ public class HistorialPago {
         return "PENDIENTE".equals(estadoAnterior) && "RECHAZADO".equals(estadoNuevo);
     }
 
+    public boolean esCancelacion() {
+        return "CANCELADO".equals(estadoNuevo);
+    }
+
     public String obtenerTipoCambio() {
-        if (esConfirmacion()) return "CONFIRMACION";
-        if (esRechazo()) return "RECHAZO";
-        if (esCambioDeEstado()) return "CAMBIO_ESTADO";
+        if (esConfirmacion())
+            return "CONFIRMACION";
+        if (esRechazo())
+            return "RECHAZO";
+        if (esCancelacion())
+            return "CANCELACION";
+        if (esCambioDeEstado())
+            return "CAMBIO_ESTADO";
         return "OTRO";
     }
 }

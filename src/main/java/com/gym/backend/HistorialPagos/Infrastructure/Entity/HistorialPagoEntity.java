@@ -5,6 +5,10 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
+/**
+ * Entidad de historial de pagos - NORMALIZADA (3NF)
+ * Los campos usuario_id, plan_id, monto se obtienen del pago relacionado.
+ */
 @Entity
 @Table(name = "historial_pagos")
 @Getter
@@ -21,14 +25,7 @@ public class HistorialPagoEntity {
     @Column(nullable = false)
     private Long pagoId;
 
-    @Column(nullable = false)
-    private Long usuarioId;
-
-    @Column(nullable = false)
-    private Long planId;
-
-    @Column(nullable = false)
-    private Double monto;
+    // ELIMINADOS por 3NF: usuario_id, plan_id, monto (se obtienen de pagos)
 
     @Column(length = 50)
     private String estadoAnterior;

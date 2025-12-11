@@ -52,12 +52,9 @@ public class PagoUseCase {
 
         Pago guardado = repo.guardar(pagoParaGuardar);
 
-        // Registrar creación del pago en historial
+        // Registrar creación del pago en historial - NORMALIZADO 3NF
         historialPago.registrarCambioAutomatico(
                 guardado.getId(),
-                guardado.getUsuarioId(),
-                guardado.getPlanId(),
-                guardado.getMonto(),
                 null, // No hay estado anterior (es la creación)
                 "PENDIENTE",
                 "Pago iniciado");
@@ -80,9 +77,6 @@ public class PagoUseCase {
 
         historialPago.registrarCambioAutomatico(
                 pago.getId(),
-                pago.getUsuarioId(),
-                pago.getPlanId(),
-                pago.getMonto(),
                 estadoAnterior,
                 "CONFIRMADO",
                 "Confirmación manual/adaptador");
@@ -111,9 +105,6 @@ public class PagoUseCase {
 
         historialPago.registrarCambioAutomatico(
                 pago.getId(),
-                pago.getUsuarioId(),
-                pago.getPlanId(),
-                pago.getMonto(),
                 estadoAnterior,
                 "CANCELADO",
                 "Cancelación solicitada por el usuario");

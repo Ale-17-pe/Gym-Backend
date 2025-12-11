@@ -62,6 +62,10 @@ public class UsuarioEntity {
     @Column(name = "fecha_actualizacion")
     private LocalDateTime fechaActualizacion;
 
+    @Column(name = "email_verificado", nullable = false)
+    @Builder.Default
+    private Boolean emailVerificado = false;
+
     @PrePersist
     protected void onCreate() {
         fechaCreacion = LocalDateTime.now();
