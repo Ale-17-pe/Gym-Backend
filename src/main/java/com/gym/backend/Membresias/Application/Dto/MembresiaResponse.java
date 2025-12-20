@@ -17,6 +17,9 @@ public class MembresiaResponse {
     private long diasRestantes;
     private String nombrePlan;
     private String nombreUsuario;
+    private String dniUsuario;
+    private String emailUsuario;
+    private Double precioPlan;
     private LocalDate fechaCreacion;
     private LocalDate fechaActualizacion;
 }

@@ -56,4 +56,12 @@ public class TipoClaseUseCase {
         tipoClase.setActivo(true);
         repository.save(tipoClase);
     }
+
+    public void eliminar(Long id) {
+        TipoClaseEntity tipoClase = obtenerPorId(id);
+        if (tipoClase.getActivo()) {
+            throw new RuntimeException("No se puede eliminar un tipo de clase activo. Desactívalo primero.");
+        }
+        repository.deleteById(id);
+    }
 }

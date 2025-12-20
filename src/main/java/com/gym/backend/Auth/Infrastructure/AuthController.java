@@ -74,6 +74,7 @@ public class AuthController {
                             ? usuario.getPersona().getGenero().name()
                             : "PREFIERO_NO_DECIR",
                     usuario.getActivo(),
+                    usuario.getPersona() != null ? usuario.getPersona().getFotoPerfilUrl() : null,
                     expiracion,
                     LocalDateTime.now(),
                     false,
@@ -217,8 +218,53 @@ public class AuthController {
             // Marcar email como verificado
             emailVerificationService.markEmailAsVerified(request.email());
 
-            log.info("✅ Email verificado exitosamente: {}", request.email());
-            return ResponseEntity.ok(new MessageResponse("Email verificado exitosamente"));
+            // Obtener usuario y generar token para auto-login
+            Usuario usuario = usuarioUseCase.obtenerPorEmail(request.email());
+
+            // Si es ADMINISTRADOR, requiere 2FA - no dar token aún
+            if (usuario.esAdministrador()) {
+                log.info("✅ Email verificado para ADMIN: {} - Requiere 2FA para login", request.email());
+                return ResponseEntity.ok(new AuthResponse(
+                        null,
+                        null,
+                        usuario.getId(),
+                        usuario.getNombreCompleto(),
+                        usuario.getEmail(),
+                        usuario.getDni(),
+                        usuario.getRol().name(),
+                        usuario.getPersona() != null && usuario.getPersona().getGenero() != null
+                                ? usuario.getPersona().getGenero().name()
+                                : "PREFIERO_NO_DECIR",
+                        usuario.getActivo(),
+                        usuario.getPersona() != null ? usuario.getPersona().getFotoPerfilUrl() : null,
+                        null,
+                        LocalDateTime.now(),
+                        false,
+                        "EMAIL_VERIFIED_ADMIN"));
+            }
+
+            // Para otros roles, generar token y hacer auto-login
+            String token = jwtService.generateToken(usuario);
+            LocalDateTime expiracion = jwtService.getExpirationFromToken(token);
+
+            log.info("✅ Email verificado y auto-login para: {}", request.email());
+            return ResponseEntity.ok(new AuthResponse(
+                    token,
+                    "Bearer",
+                    usuario.getId(),
+                    usuario.getNombreCompleto(),
+                    usuario.getEmail(),
+                    usuario.getDni(),
+                    usuario.getRol().name(),
+                    usuario.getPersona() != null && usuario.getPersona().getGenero() != null
+                            ? usuario.getPersona().getGenero().name()
+                            : "PREFIERO_NO_DECIR",
+                    usuario.getActivo(),
+                    usuario.getPersona() != null ? usuario.getPersona().getFotoPerfilUrl() : null,
+                    expiracion,
+                    LocalDateTime.now(),
+                    false,
+                    "Email verificado exitosamente"));
 
         } catch (UsuarioNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)

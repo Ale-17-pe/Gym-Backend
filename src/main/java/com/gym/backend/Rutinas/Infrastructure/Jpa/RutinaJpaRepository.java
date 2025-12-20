@@ -14,6 +14,12 @@ import java.util.Optional;
 public interface RutinaJpaRepository extends JpaRepository<RutinaEntity, Long> {
     List<RutinaEntity> findByUsuarioIdOrderByFechaCreacionDesc(Long usuarioId);
 
+    // Rutinas personales (no plantillas)
+    List<RutinaEntity> findByUsuarioIdAndEsPlantillaFalseOrderByFechaCreacionDesc(Long usuarioId);
+
+    // Plantillas públicas
+    List<RutinaEntity> findByEsPlantillaTrueOrderByNombreAsc();
+
     Optional<RutinaEntity> findByUsuarioIdAndActivaTrue(Long usuarioId);
 
     @Modifying

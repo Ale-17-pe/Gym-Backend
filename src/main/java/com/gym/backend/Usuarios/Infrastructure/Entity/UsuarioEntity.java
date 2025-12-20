@@ -58,6 +58,7 @@ public class UsuarioEntity {
 
     // Relación 1:1 con Persona
     @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private PersonaEntity persona;
 
     @PrePersist

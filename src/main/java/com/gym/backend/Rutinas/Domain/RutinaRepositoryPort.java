@@ -17,6 +17,8 @@ public interface RutinaRepositoryPort {
 
     List<Rutina> listar();
 
+    List<Rutina> buscarPlantillas(); // Rutinas públicas creadas por admin
+
     void eliminar(Long id);
 
     void desactivarTodasPorUsuario(Long usuarioId);

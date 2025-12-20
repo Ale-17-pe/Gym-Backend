@@ -61,6 +61,7 @@ public class UsuarioMapper {
                 .activo(usuario.getActivo())
                 .emailVerificado(usuario.getEmailVerificado())
                 .fechaNacimiento(usuario.getFechaNacimiento())
+                .fotoPerfilUrl(usuario.getPersona() != null ? usuario.getPersona().getFotoPerfilUrl() : null)
                 .build();
     }
 }

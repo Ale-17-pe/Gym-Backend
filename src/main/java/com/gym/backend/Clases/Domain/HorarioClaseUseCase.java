@@ -2,8 +2,8 @@ package com.gym.backend.Clases.Domain;
 
 import com.gym.backend.Clases.Infrastructure.Entity.HorarioClaseEntity;
 import com.gym.backend.Clases.Infrastructure.Repository.HorarioClaseRepository;
-import com.gym.backend.Clases.Infrastructure.Repository.InstructorRepository;
 import com.gym.backend.Clases.Infrastructure.Repository.TipoClaseRepository;
+import com.gym.backend.Usuarios.Infrastructure.Jpa.EntrenadorJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,7 +17,7 @@ public class HorarioClaseUseCase {
 
     private final HorarioClaseRepository repository;
     private final TipoClaseRepository tipoClaseRepository;
-    private final InstructorRepository instructorRepository;
+    private final EntrenadorJpaRepository entrenadorRepository;
 
     public List<HorarioClaseEntity> listarTodos() {
         return repository.findAll();
@@ -37,12 +37,12 @@ public class HorarioClaseUseCase {
     }
 
     public HorarioClaseEntity crear(HorarioClaseEntity horario) {
-        // Validar que existen el tipo de clase y el instructor
+        // Validar que existen el tipo de clase y el entrenador
         if (!tipoClaseRepository.existsById(horario.getTipoClase().getId())) {
             throw new RuntimeException("Tipo de clase no encontrado");
         }
-        if (!instructorRepository.existsById(horario.getInstructor().getId())) {
-            throw new RuntimeException("Instructor no encontrado");
+        if (!entrenadorRepository.existsById(horario.getEntrenador().getId())) {
+            throw new RuntimeException("Entrenador no encontrado");
         }
 
         return repository.save(horario);
@@ -52,7 +52,7 @@ public class HorarioClaseUseCase {
         HorarioClaseEntity horario = obtenerPorId(id);
 
         horario.setTipoClase(datosActualizados.getTipoClase());
-        horario.setInstructor(datosActualizados.getInstructor());
+        horario.setEntrenador(datosActualizados.getEntrenador());
         horario.setDiaSemana(datosActualizados.getDiaSemana());
         horario.setHoraInicio(datosActualizados.getHoraInicio());
         horario.setAforoMaximo(datosActualizados.getAforoMaximo());

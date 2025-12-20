@@ -36,7 +36,7 @@ public interface MembresiaRepositoryPort extends BaseCrudPort<Membresia, Long>, 
 
     Page<Membresia> listarPorEstadoPaginated(EstadoMembresia estado, Pageable pageable);
 
-    List<Membresia> listarPorVencer();
+    List<Membresia> listarPorVencer(LocalDate fechaLimite);
 
     List<Membresia> buscarPorRangoFechas(LocalDate fechaInicio, LocalDate fechaFin);
 
@@ -44,7 +44,7 @@ public interface MembresiaRepositoryPort extends BaseCrudPort<Membresia, Long>, 
 
     Long contarPorEstado(EstadoMembresia estado);
 
-    Long contarPorVencer();
+    Long contarPorVencer(LocalDate fechaLimite);
 
     Long contarPorUsuario(Long usuarioId);
 }

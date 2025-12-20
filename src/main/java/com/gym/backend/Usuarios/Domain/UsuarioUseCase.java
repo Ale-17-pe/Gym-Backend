@@ -1,5 +1,6 @@
 package com.gym.backend.Usuarios.Domain;
 
+import com.gym.backend.Shared.PasswordReset.PasswordResetService;
 import com.gym.backend.Usuarios.Application.Dto.ActualizarUsuarioRequest;
 import com.gym.backend.Usuarios.Domain.Enum.Rol;
 import com.gym.backend.Usuarios.Domain.Exceptions.UsuarioDuplicateException;
@@ -22,6 +23,7 @@ public class UsuarioUseCase {
     private final UsuarioRepositoryPort usuarioRepo;
     private final PersonaRepositoryPort personaRepo;
     private final ClienteRepositoryPort clienteRepo;
+    private final PasswordResetService passwordResetService;
 
     /**
      * Crear usuario (solo para uso interno o migraciones)
@@ -157,5 +159,41 @@ public class UsuarioUseCase {
         if (!usuario.esActivo()) {
             throw new UsuarioInactiveException(id);
         }
+    }
+
+    /**
+     * Marcar email como verificado manualmente (admin)
+     */
+    @Transactional
+    public Usuario marcarEmailVerificado(Long id) {
+        log.info("Marcando email como verificado para usuario ID: {}", id);
+        Usuario usuario = obtener(id);
+        usuario.setEmailVerificado(true);
+        return usuarioRepo.actualizar(usuario);
+    }
+
+    /**
+     * Enviar código de reset de password
+     */
+    public void enviarResetPassword(Long id) {
+        Usuario usuario = obtenerConDatosCompletos(id);
+        log.info("Enviando código de reset a: {}", usuario.getEmail());
+        passwordResetService.generateResetCode(usuario.getEmail());
+    }
+
+    /**
+     * Actualizar avatar del usuario
+     */
+    @Transactional
+    public Usuario actualizarAvatar(Long id, String avatarUrl) {
+        log.info("Actualizando avatar para usuario ID: {}", id);
+        Usuario usuario = obtenerConDatosCompletos(id);
+
+        if (usuario.getPersona() != null) {
+            usuario.getPersona().setFotoPerfilUrl(avatarUrl);
+            personaRepo.guardar(usuario.getPersona());
+        }
+
+        return usuario;
     }
 }

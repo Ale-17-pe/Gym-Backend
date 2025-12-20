@@ -2,7 +2,12 @@ package com.gym.backend.Pago.Infrastructure.Controller;
 
 import com.gym.backend.Pago.Application.Dto.PagoDTO;
 import com.gym.backend.Pago.Application.Mapper.PagoMapper;
+import com.gym.backend.Pago.Domain.Pago;
 import com.gym.backend.Pago.Domain.PagoUseCase;
+import com.gym.backend.Usuarios.Domain.UsuarioUseCase;
+import com.gym.backend.Usuarios.Domain.Usuario;
+import com.gym.backend.Planes.Domain.PlanUseCase;
+import com.gym.backend.Planes.Domain.Plan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -25,10 +30,41 @@ public class PagoController {
     private final PagoUseCase useCase;
     private final PagoMapper mapper;
     private final com.gym.backend.Qr.Domain.QrUseCase qrUseCase;
+    private final UsuarioUseCase usuarioUseCase;
+    private final PlanUseCase planUseCase;
+
+    private PagoDTO enrichDTO(Pago pago) {
+        PagoDTO dto = mapper.toDTO(pago);
+
+        // Obtener datos del usuario
+        try {
+            Usuario usuario = usuarioUseCase.obtenerConDatosCompletos(pago.getUsuarioId());
+            if (usuario != null && usuario.getPersona() != null) {
+                dto.setNombreUsuario(usuario.getPersona().getNombre() + " " + usuario.getPersona().getApellido());
+                dto.setDniUsuario(usuario.getPersona().getDni());
+                dto.setEmailUsuario(usuario.getEmail());
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo obtener info de usuario {}: {}", pago.getUsuarioId(), e.getMessage());
+        }
+
+        // Obtener datos del plan
+        try {
+            Plan plan = planUseCase.obtener(pago.getPlanId());
+            if (plan != null) {
+                dto.setNombrePlan(plan.getNombrePlan());
+                dto.setPrecioPlan(plan.getPrecio());
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo obtener info de plan {}: {}", pago.getPlanId(), e.getMessage());
+        }
+
+        return dto;
+    }
 
     @GetMapping
     public List<PagoDTO> listar() {
-        return useCase.listar().stream().map(mapper::toDTO).toList();
+        return useCase.listar().stream().map(this::enrichDTO).toList();
     }
 
     @GetMapping("/paginated")
@@ -36,12 +72,12 @@ public class PagoController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return useCase.listarPaginated(pageable).map(mapper::toDTO);
+        return useCase.listarPaginated(pageable).map(this::enrichDTO);
     }
 
     @GetMapping("/usuario/{usuarioId}")
     public List<PagoDTO> listarPorUsuario(@PathVariable Long usuarioId) {
-        return useCase.listarPorUsuario(usuarioId).stream().map(mapper::toDTO).toList();
+        return useCase.listarPorUsuario(usuarioId).stream().map(this::enrichDTO).toList();
     }
 
     @GetMapping("/usuario/{usuarioId}/paginated")
@@ -50,18 +86,18 @@ public class PagoController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return useCase.listarPorUsuarioPaginated(usuarioId, pageable).map(mapper::toDTO);
+        return useCase.listarPorUsuarioPaginated(usuarioId, pageable).map(this::enrichDTO);
     }
 
     @GetMapping("/pendientes")
     public List<PagoDTO> listarPendientes() {
-        return useCase.listarPendientes().stream().map(mapper::toDTO).toList();
+        return useCase.listarPendientes().stream().map(this::enrichDTO).toList();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<PagoDTO> obtener(@PathVariable Long id) {
         var pago = useCase.obtener(id);
-        return ResponseEntity.ok(mapper.toDTO(pago));
+        return ResponseEntity.ok(enrichDTO(pago));
     }
 
     // Nuevos endpoints para reporting

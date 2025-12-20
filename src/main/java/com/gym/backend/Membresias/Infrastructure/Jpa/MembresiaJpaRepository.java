@@ -27,10 +27,10 @@ public interface MembresiaJpaRepository extends JpaRepository<MembresiaEntity, L
     Optional<MembresiaEntity> findActivaByUsuarioId(@Param("usuarioId") Long usuarioId);
 
     @Query("SELECT m FROM MembresiaEntity m WHERE m.estado = 'ACTIVA' AND m.fechaFin <= :fechaLimite")
-    List<MembresiaEntity> findPorVencer();
+    List<MembresiaEntity> findPorVencer(@Param("fechaLimite") LocalDate fechaLimite);
 
     @Query("SELECT COUNT(m) FROM MembresiaEntity m WHERE m.estado = 'ACTIVA' AND m.fechaFin <= :fecha")
-    Long countPorVencer();
+    Long countPorVencer(@Param("fecha") LocalDate fecha);
 
     Long countByEstado(EstadoMembresia estado);
 

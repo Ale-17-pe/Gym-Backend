@@ -22,6 +22,7 @@ public class Rutina {
     private String objetivo; // "Ganar masa muscular", "Perder grasa", etc.
     private Integer duracionSemanas; // Duración planificada
     private boolean activa; // Solo una rutina activa por usuario
+    private boolean esPlantilla; // true = plantilla pública creada por admin
     private LocalDateTime fechaCreacion;
     private LocalDateTime fechaActualizacion;
 

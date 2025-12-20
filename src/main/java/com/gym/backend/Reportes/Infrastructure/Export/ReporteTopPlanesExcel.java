@@ -34,7 +34,7 @@ public class ReporteTopPlanesExcel {
         int row = 6;
         for (TopPlanes r : data) {
             Row rw = sheet.createRow(row++);
-            rw.createCell(0).setCellValue(r.nombrePlan());
+            rw.createCell(0).setCellValue(r.planNombre());
             rw.createCell(1).setCellValue(r.cantidad());
         }
 

@@ -23,24 +23,27 @@ public class ReporteUsuariosNuevosPDF {
         doc.open();
 
         Image logo = ReportUtils.loadLogo();
-        if (logo != null) doc.add(logo);
+        if (logo != null)
+            doc.add(logo);
 
         doc.add(new Paragraph(
                 "REPORTE: USUARIOS NUEVOS POR MES\n\n",
-                FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18)
-        ));
+                FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18)));
 
-        PdfPTable table = new PdfPTable(2);
+        PdfPTable table = new PdfPTable(3);
         table.setWidthPercentage(100);
         table.addCell("Mes");
+        table.addCell("Año");
         table.addCell("Cantidad");
 
         LinkedHashMap<String, Number> chartData = new LinkedHashMap<>();
 
         for (UsuariosNuevos r : data) {
-            table.addCell(r.mes());
+            String mesAnio = r.mes() + "/" + r.anio();
+            table.addCell(String.valueOf(r.mes()));
+            table.addCell(String.valueOf(r.anio()));
             table.addCell(r.cantidad().toString());
-            chartData.put(r.mes(), r.cantidad());
+            chartData.put(mesAnio, r.cantidad());
         }
 
         doc.add(table);

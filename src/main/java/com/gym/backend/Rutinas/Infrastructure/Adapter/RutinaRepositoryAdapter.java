@@ -29,7 +29,7 @@ public class RutinaRepositoryAdapter implements RutinaRepositoryPort {
 
     @Override
     public List<Rutina> buscarPorUsuario(Long usuarioId) {
-        return jpa.findByUsuarioIdOrderByFechaCreacionDesc(usuarioId).stream()
+        return jpa.findByUsuarioIdAndEsPlantillaFalseOrderByFechaCreacionDesc(usuarioId).stream()
                 .map(this::toDomain).toList();
     }
 
@@ -41,6 +41,12 @@ public class RutinaRepositoryAdapter implements RutinaRepositoryPort {
     @Override
     public List<Rutina> listar() {
         return jpa.findAll().stream().map(this::toDomain).toList();
+    }
+
+    @Override
+    public List<Rutina> buscarPlantillas() {
+        return jpa.findByEsPlantillaTrueOrderByNombreAsc().stream()
+                .map(this::toDomain).toList();
     }
 
     @Override
@@ -63,6 +69,7 @@ public class RutinaRepositoryAdapter implements RutinaRepositoryPort {
                 .objetivo(e.getObjetivo())
                 .duracionSemanas(e.getDuracionSemanas())
                 .activa(e.isActiva())
+                .esPlantilla(e.isEsPlantilla())
                 .fechaCreacion(e.getFechaCreacion())
                 .fechaActualizacion(e.getFechaActualizacion())
                 .build();
@@ -77,6 +84,7 @@ public class RutinaRepositoryAdapter implements RutinaRepositoryPort {
                 .objetivo(r.getObjetivo())
                 .duracionSemanas(r.getDuracionSemanas())
                 .activa(r.isActiva())
+                .esPlantilla(r.isEsPlantilla())
                 .fechaCreacion(r.getFechaCreacion())
                 .fechaActualizacion(r.getFechaActualizacion())
                 .build();

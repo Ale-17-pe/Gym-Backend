@@ -1,5 +1,8 @@
 package com.gym.backend.Clases.Infrastructure.Entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.gym.backend.Usuarios.Infrastructure.Entity.EntrenadorEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -24,13 +27,15 @@ public class HorarioClaseEntity {
     private TipoClaseEntity tipoClase;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "instructor_id", nullable = false)
-    private InstructorEntity instructor;
+    @JoinColumn(name = "entrenador_id", nullable = false)
+    @JsonIgnoreProperties({ "empleado", "hibernateLazyInitializer", "handler" })
+    private EntrenadorEntity entrenador;
 
     @Column(name = "dia_semana", nullable = false)
     private Integer diaSemana; // 1=Lunes, 7=Domingo
 
     @Column(name = "hora_inicio", nullable = false)
+    @JsonFormat(pattern = "HH:mm")
     private LocalTime horaInicio;
 
     @Column(name = "aforo_maximo", nullable = false)

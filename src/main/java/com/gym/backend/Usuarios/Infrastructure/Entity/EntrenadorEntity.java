@@ -1,5 +1,6 @@
 package com.gym.backend.Usuarios.Infrastructure.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.gym.backend.Usuarios.Domain.Enum.EspecialidadEntrenador;
 import jakarta.persistence.*;
 import lombok.*;
@@ -22,8 +23,9 @@ public class EntrenadorEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "empleado_id", unique = true, nullable = false)
+    @JsonIgnoreProperties({ "entrenador", "hibernateLazyInitializer", "handler" })
     private EmpleadoEntity empleado;
 
     // Campo directo para consultas rápidas

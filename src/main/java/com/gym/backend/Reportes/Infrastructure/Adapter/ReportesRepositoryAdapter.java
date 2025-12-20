@@ -43,7 +43,10 @@ public class ReportesRepositoryAdapter implements ReportesRepositoryPort {
         @Override
         public List<TopPlanes> topPlanes() {
                 return jpa.topPlanes().stream()
-                                .map(r -> new TopPlanes((String) r[0], ((Number) r[1]).longValue()))
+                                .map(r -> new TopPlanes(
+                                                (String) r[0],
+                                                ((Number) r[1]).intValue(),
+                                                ((Number) r[2]).doubleValue()))
                                 .toList();
         }
 
@@ -64,7 +67,10 @@ public class ReportesRepositoryAdapter implements ReportesRepositoryPort {
         @Override
         public List<UsuariosNuevos> usuariosNuevosPorMes() {
                 return jpa.usuariosNuevosPorMes().stream()
-                                .map(r -> new UsuariosNuevos((String) r[0], ((Number) r[1]).longValue()))
+                                .map(r -> new UsuariosNuevos(
+                                                ((Number) r[0]).intValue(),
+                                                ((Number) r[1]).intValue(),
+                                                ((Number) r[2]).intValue()))
                                 .toList();
         }
 
@@ -80,7 +86,7 @@ public class ReportesRepositoryAdapter implements ReportesRepositoryPort {
                 return jpa.pagosPorMetodo().stream()
                                 .map(r -> new PagosPorMetodo(
                                                 (String) r[0],
-                                                ((Number) r[1]).longValue(),
+                                                ((Number) r[1]).intValue(),
                                                 ((Number) r[2]).doubleValue()))
                                 .toList();
         }
@@ -164,5 +170,36 @@ public class ReportesRepositoryAdapter implements ReportesRepositoryPort {
                                 .cantidadPendientes(((Number) result.get("countPendiente")).intValue())
                                 .cantidadCanceladas(((Number) result.get("countCancelado")).intValue())
                                 .build();
+        }
+
+        // ========== IMPLEMENTACIONES NUEVOS MÉTODOS ==========
+
+        @Override
+        public Map<String, Object> comparativaMensual() {
+                return jpa.comparativaMensual();
+        }
+
+        @Override
+        public List<Map<String, Object>> asistenciasSemanal() {
+                return jpa.asistenciasSemanal();
+        }
+
+        @Override
+        public Map<String, Object> renovacionesProximas(int dias) {
+                return jpa.renovacionesProximas(dias);
+        }
+
+        // ========== MÉTODOS PARA EXPORTACIÓN ==========
+
+        @Override
+        public List<com.gym.backend.Reportes.Application.DTO.IngresoDetalladoDTO> obtenerIngresosDetallados(
+                        com.gym.backend.Reportes.Application.DTO.FiltroIngresoDTO filtro) {
+                return jpa.obtenerIngresosDetallados(filtro);
+        }
+
+        @Override
+        public com.gym.backend.Reportes.Application.DTO.ResumenIngresoDTO obtenerResumenIngresos(
+                        com.gym.backend.Reportes.Application.DTO.FiltroIngresoDTO filtro) {
+                return jpa.obtenerResumenIngresos(filtro);
         }
 }

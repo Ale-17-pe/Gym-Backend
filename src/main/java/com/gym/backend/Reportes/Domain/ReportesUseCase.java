@@ -134,4 +134,33 @@ public class ReportesUseCase {
             throw new IllegalArgumentException("El rango de fechas no puede ser mayor a 1 año");
         }
     }
+
+    // ========== NUEVOS MÉTODOS ==========
+
+    /**
+     * Comparativa mensual: mes actual vs mes anterior
+     */
+    public Map<String, Object> comparativaMensual() {
+        log.info("Generando comparativa mensual");
+        return repo.comparativaMensual();
+    }
+
+    /**
+     * Asistencias de la última semana (día por día)
+     */
+    public List<Map<String, Object>> asistenciasSemanal() {
+        log.info("Generando reporte de asistencias semanal");
+        return repo.asistenciasSemanal();
+    }
+
+    /**
+     * Membresías que vencen en los próximos N días
+     */
+    public Map<String, Object> renovacionesProximas(int dias) {
+        log.info("Generando reporte de renovaciones próximas en {} días", dias);
+        if (dias < 1 || dias > 90) {
+            throw new IllegalArgumentException("El número de días debe estar entre 1 y 90");
+        }
+        return repo.renovacionesProximas(dias);
+    }
 }

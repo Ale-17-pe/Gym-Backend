@@ -55,45 +55,53 @@ public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<Usuario> buscarPorId(Long id) {
-        return usuarioJpa.findById(id).map(this::toDomain);
+        return usuarioJpa.findById(id).map(this::toDomainConDatosCompletos);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<Usuario> buscarPorEmail(String email) {
-        return usuarioJpa.findByEmail(email).map(this::toDomain);
+        return usuarioJpa.findByEmail(email).map(this::toDomainConDatosCompletos);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<Usuario> buscarPorDni(String dni) {
         return personaJpa.findByDni(dni)
                 .map(persona -> usuarioJpa.findById(persona.getUsuario().getId()).orElse(null))
-                .map(this::toDomain);
+                .map(this::toDomainConDatosCompletos);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Usuario> listar() {
-        return usuarioJpa.findAll().stream().map(this::toDomain).toList();
+        return usuarioJpa.findAll().stream().map(this::toDomainConDatosCompletos).toList();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<Usuario> listarPaginated(Pageable pageable) {
-        return usuarioJpa.findAll(pageable).map(this::toDomain);
+        return usuarioJpa.findAll(pageable).map(this::toDomainConDatosCompletos);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Usuario> listarPorRol(Rol rol) {
-        return usuarioJpa.findByRol(rol).stream().map(this::toDomain).toList();
+        return usuarioJpa.findByRol(rol).stream().map(this::toDomainConDatosCompletos).toList();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<Usuario> listarPorRolPaginated(Rol rol, Pageable pageable) {
-        return usuarioJpa.findByRolPaginated(rol, pageable).map(this::toDomain);
+        return usuarioJpa.findByRolPaginated(rol, pageable).map(this::toDomainConDatosCompletos);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Usuario> listarPorActivo(Boolean activo) {
-        return usuarioJpa.findByActivo(activo).stream().map(this::toDomain).toList();
+        return usuarioJpa.findByActivo(activo).stream().map(this::toDomainConDatosCompletos).toList();
     }
 
     @Override

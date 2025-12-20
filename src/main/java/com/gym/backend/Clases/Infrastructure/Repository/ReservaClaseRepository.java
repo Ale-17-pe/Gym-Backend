@@ -21,7 +21,7 @@ public interface ReservaClaseRepository extends JpaRepository<ReservaClaseEntity
 
     List<ReservaClaseEntity> findByEstado(EstadoReserva estado);
 
-    @Query("SELECT r FROM ReservaClaseEntity r JOIN FETCH r.sesionClase s JOIN FETCH s.horarioClase h JOIN FETCH h.tipoClase JOIN FETCH h.instructor i JOIN FETCH i.usuario WHERE r.usuario.id = :usuarioId AND r.estado IN ('CONFIRMADA', 'LISTA_ESPERA') ORDER BY s.fecha")
+    @Query("SELECT r FROM ReservaClaseEntity r JOIN FETCH r.sesionClase s JOIN FETCH s.horarioClase h JOIN FETCH h.tipoClase JOIN FETCH h.entrenador WHERE r.usuario.id = :usuarioId AND r.estado IN ('CONFIRMADA', 'LISTA_ESPERA') ORDER BY s.fecha")
     List<ReservaClaseEntity> findReservasActivasByUsuario(@Param("usuarioId") Long usuarioId);
 
     @Query("SELECT r FROM ReservaClaseEntity r WHERE r.sesionClase.id = :sesionId AND r.estado = 'CONFIRMADA'")

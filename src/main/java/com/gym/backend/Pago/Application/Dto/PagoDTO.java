@@ -19,4 +19,13 @@ public class PagoDTO {
     private LocalDateTime fechaPago;
     private LocalDateTime fechaVencimiento;
     private String codigoPago;
+
+    // Datos del usuario
+    private String nombreUsuario;
+    private String dniUsuario;
+    private String emailUsuario;
+
+    // Datos del plan
+    private String nombrePlan;
+    private Double precioPlan;
 }

@@ -14,6 +14,7 @@ public record AuthResponse(
         String rol,
         String genero,
         Boolean activo,
+        String fotoPerfilUrl,
 
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime expiracion,
 

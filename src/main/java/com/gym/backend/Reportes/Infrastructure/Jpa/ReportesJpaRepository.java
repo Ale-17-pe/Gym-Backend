@@ -61,7 +61,8 @@ public class ReportesJpaRepository {
         return em.createNativeQuery("""
                 SELECT
                     p.nombre_plan,
-                    COUNT(*) as cantidad
+                    COUNT(*)::INTEGER as cantidad,
+                    0.0 as total_ingresos
                 FROM membresias m
                 JOIN planes p ON p.id = m.plan_id
                 WHERE p.activo = true
@@ -107,11 +108,12 @@ public class ReportesJpaRepository {
                 .createNativeQuery(
                         """
                                 SELECT
-                                    TO_CHAR(fecha_creacion, 'TMMonth YYYY') AS mes,
-                                    COUNT(*) as cantidad
-                                FROM usuarios
+                                    EXTRACT(MONTH FROM fecha_creacion)::INTEGER AS mes,
+                                    EXTRACT(YEAR FROM fecha_creacion)::INTEGER AS anio,
+                                    COUNT(*)::INTEGER as cantidad
+                                FROM usuario
                                 WHERE fecha_creacion >= CURRENT_DATE - INTERVAL '12 months'
-                                GROUP BY TO_CHAR(fecha_creacion, 'TMMonth YYYY'), EXTRACT(YEAR FROM fecha_creacion), EXTRACT(MONTH FROM fecha_creacion)
+                                GROUP BY EXTRACT(YEAR FROM fecha_creacion), EXTRACT(MONTH FROM fecha_creacion)
                                 ORDER BY EXTRACT(YEAR FROM fecha_creacion) DESC, EXTRACT(MONTH FROM fecha_creacion) DESC
                                 """)
                 .getResultList();
@@ -180,15 +182,16 @@ public class ReportesJpaRepository {
     public List<Object[]> usuariosMasActivos(LocalDateTime inicio, LocalDateTime fin) {
         return em.createNativeQuery("""
                 SELECT
-                    u.nombre || ' ' || u.apellido as usuario,
+                    pe.nombre || ' ' || pe.apellido as usuario,
                     COUNT(a.id) as asistencias,
                     p.nombre_plan as plan
                 FROM asistencias a
-                JOIN usuarios u ON u.id = a.usuario_id
+                JOIN usuario u ON u.id = a.usuario_id
+                JOIN persona pe ON pe.usuario_id = u.id
                 JOIN membresias m ON m.id = a.membresia_id
                 JOIN planes p ON p.id = m.plan_id
                 WHERE a.fecha_hora BETWEEN :inicio AND :fin
-                GROUP BY u.id, u.nombre, u.apellido, p.nombre_plan
+                GROUP BY u.id, pe.nombre, pe.apellido, p.nombre_plan
                 ORDER BY asistencias DESC
                 LIMIT 20
                 """)
@@ -217,35 +220,59 @@ public class ReportesJpaRepository {
     public Map<String, Object> estadisticasGenerales() {
         Map<String, Object> stats = new HashMap<>();
 
-        // Total usuarios
-        Long totalUsuarios = (Long) em.createNativeQuery("SELECT COUNT(*) FROM usuarios WHERE activo = true")
-                .getSingleResult();
-        stats.put("totalUsuarios", totalUsuarios);
-        stats.put("totalUsuariosActivos", totalUsuarios);
-
-        // Total membresías activas
-        Long totalMembresias = (Long) em.createNativeQuery("SELECT COUNT(*) FROM membresias WHERE estado = 'ACTIVA'")
-                .getSingleResult();
-        stats.put("totalMembresias", totalMembresias);
-
-        // Total asistencias hoy
-        Long asistenciasHoy = (Long) em.createNativeQuery("""
-                SELECT COUNT(*) FROM asistencias
-                WHERE DATE(fecha_hora) = CURRENT_DATE
-                """).getSingleResult();
-        stats.put("asistenciasHoy", asistenciasHoy);
-
-        // Ingresos del mes
-        Double ingresosMes = (Double) em.createNativeQuery("""
-                SELECT COALESCE(SUM(monto), 0) FROM pagos
-                WHERE estado = 'CONFIRMADO'
-                    AND fecha_pago >= DATE_TRUNC('month', CURRENT_DATE)
-                """).getSingleResult();
-        stats.put("ingresosMes", ingresosMes);
-        stats.put("ingresosMesActual", ingresosMes);
-
-        // Plan más popular
         try {
+            // Total usuarios
+            Long totalUsuarios = ((Number) em.createNativeQuery("SELECT COUNT(*) FROM usuario WHERE activo = true")
+                    .getSingleResult()).longValue();
+            stats.put("totalUsuarios", totalUsuarios);
+            stats.put("totalUsuariosActivos", totalUsuarios);
+        } catch (Exception e) {
+            stats.put("totalUsuarios", 0L);
+            stats.put("totalUsuariosActivos", 0L);
+        }
+
+        try {
+            // Total membresías activas
+            Long totalMembresias = ((Number) em
+                    .createNativeQuery("SELECT COUNT(*) FROM membresias WHERE estado = 'ACTIVA'")
+                    .getSingleResult()).longValue();
+            stats.put("totalMembresias", totalMembresias);
+            stats.put("membresiasActivas", totalMembresias);
+        } catch (Exception e) {
+            stats.put("totalMembresias", 0L);
+            stats.put("membresiasActivas", 0L);
+        }
+
+        try {
+            // Total asistencias hoy
+            Long asistenciasHoy = ((Number) em.createNativeQuery("""
+                    SELECT COUNT(*) FROM asistencias
+                    WHERE DATE(fecha_hora) = CURRENT_DATE
+                    """).getSingleResult()).longValue();
+            stats.put("asistenciasHoy", asistenciasHoy);
+        } catch (Exception e) {
+            stats.put("asistenciasHoy", 0L);
+        }
+
+        try {
+            // Ingresos del mes
+            Object result = em.createNativeQuery("""
+                    SELECT COALESCE(SUM(monto), 0) FROM pagos
+                    WHERE estado = 'CONFIRMADO'
+                        AND fecha_pago >= DATE_TRUNC('month', CURRENT_DATE)
+                    """).getSingleResult();
+            Double ingresosMes = result != null ? ((Number) result).doubleValue() : 0.0;
+            stats.put("ingresosMes", ingresosMes);
+            stats.put("ingresosMesActual", ingresosMes);
+            stats.put("ingresosTotal", ingresosMes);
+        } catch (Exception e) {
+            stats.put("ingresosMes", 0.0);
+            stats.put("ingresosMesActual", 0.0);
+            stats.put("ingresosTotal", 0.0);
+        }
+
+        try {
+            // Plan más popular
             Object planPopularResult = em.createNativeQuery("""
                     SELECT p.nombre_plan FROM planes p
                     JOIN membresias m ON m.plan_id = p.id
@@ -258,12 +285,18 @@ public class ReportesJpaRepository {
             stats.put("planPopular", "Sin datos");
         }
 
-        // Nuevos usuarios últimos 30 días
-        Long nuevosUsuarios = (Long) em.createNativeQuery("""
-                SELECT COUNT(*) FROM usuarios
-                WHERE fecha_creacion >= CURRENT_DATE - INTERVAL '30 days'
-                """).getSingleResult();
-        stats.put("nuevosUsuariosUltimos30Dias", nuevosUsuarios);
+        try {
+            // Nuevos usuarios últimos 30 días
+            Long nuevosUsuarios = ((Number) em.createNativeQuery("""
+                    SELECT COUNT(*) FROM usuario
+                    WHERE fecha_creacion >= CURRENT_DATE - INTERVAL '30 days'
+                    """).getSingleResult()).longValue();
+            stats.put("nuevosUsuariosUltimos30Dias", nuevosUsuarios);
+            stats.put("usuariosNuevos", nuevosUsuarios);
+        } catch (Exception e) {
+            stats.put("nuevosUsuariosUltimos30Dias", 0L);
+            stats.put("usuariosNuevos", 0L);
+        }
 
         stats.put("fechaGeneracion", LocalDateTime.now());
 
@@ -296,7 +329,7 @@ public class ReportesJpaRepository {
 
         // Nuevos usuarios en el período
         Long nuevosUsuarios = (Long) em.createNativeQuery("""
-                SELECT COUNT(*) FROM usuarios
+                SELECT COUNT(*) FROM usuario
                 WHERE fecha_creacion BETWEEN :inicio AND :fin
                 """)
                 .setParameter("inicio", inicio)
@@ -433,5 +466,366 @@ public class ReportesJpaRepository {
         map.put("countCancelado", result[7]);
 
         return map;
+    }
+
+    // ========== NUEVOS MÉTODOS ==========
+
+    /**
+     * Comparativa: Mes actual vs mes anterior
+     */
+    public Map<String, Object> comparativaMensual() {
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            // Ingresos mes actual
+            Object ingActual = em.createNativeQuery("""
+                    SELECT COALESCE(SUM(monto), 0) FROM pagos
+                    WHERE estado = 'CONFIRMADO'
+                        AND fecha_pago >= DATE_TRUNC('month', CURRENT_DATE)
+                        AND fecha_pago < DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month'
+                    """).getSingleResult();
+            Double ingresosMesActual = ingActual != null ? ((Number) ingActual).doubleValue() : 0.0;
+
+            // Ingresos mes anterior
+            Object ingAnterior = em.createNativeQuery("""
+                    SELECT COALESCE(SUM(monto), 0) FROM pagos
+                    WHERE estado = 'CONFIRMADO'
+                        AND fecha_pago >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 month'
+                        AND fecha_pago < DATE_TRUNC('month', CURRENT_DATE)
+                    """).getSingleResult();
+            Double ingresosMesAnterior = ingAnterior != null ? ((Number) ingAnterior).doubleValue() : 0.0;
+
+            // Nuevos usuarios mes actual
+            Long usuariosMesActual = ((Number) em.createNativeQuery("""
+                    SELECT COUNT(*) FROM usuario
+                    WHERE fecha_creacion >= DATE_TRUNC('month', CURRENT_DATE)
+                    """).getSingleResult()).longValue();
+
+            // Nuevos usuarios mes anterior
+            Long usuariosMesAnterior = ((Number) em.createNativeQuery("""
+                    SELECT COUNT(*) FROM usuario
+                    WHERE fecha_creacion >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 month'
+                        AND fecha_creacion < DATE_TRUNC('month', CURRENT_DATE)
+                    """).getSingleResult()).longValue();
+
+            // Asistencias mes actual
+            Long asistenciasMesActual = ((Number) em.createNativeQuery("""
+                    SELECT COUNT(*) FROM asistencias
+                    WHERE fecha_hora >= DATE_TRUNC('month', CURRENT_DATE)
+                    """).getSingleResult()).longValue();
+
+            // Asistencias mes anterior
+            Long asistenciasMesAnterior = ((Number) em.createNativeQuery("""
+                    SELECT COUNT(*) FROM asistencias
+                    WHERE fecha_hora >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 month'
+                        AND fecha_hora < DATE_TRUNC('month', CURRENT_DATE)
+                    """).getSingleResult()).longValue();
+
+            // Calcular porcentajes
+            double porcentajeIngresos = calcularPorcentajeCambio(ingresosMesAnterior, ingresosMesActual);
+            double porcentajeUsuarios = calcularPorcentajeCambio(usuariosMesAnterior.doubleValue(),
+                    usuariosMesActual.doubleValue());
+            double porcentajeAsistencias = calcularPorcentajeCambio(asistenciasMesAnterior.doubleValue(),
+                    asistenciasMesActual.doubleValue());
+
+            result.put("ingresosMesActual", ingresosMesActual);
+            result.put("ingresosMesAnterior", ingresosMesAnterior);
+            result.put("porcentajeIngresos", porcentajeIngresos);
+
+            result.put("usuariosMesActual", usuariosMesActual);
+            result.put("usuariosMesAnterior", usuariosMesAnterior);
+            result.put("porcentajeUsuarios", porcentajeUsuarios);
+
+            result.put("asistenciasMesActual", asistenciasMesActual);
+            result.put("asistenciasMesAnterior", asistenciasMesAnterior);
+            result.put("porcentajeAsistencias", porcentajeAsistencias);
+        } catch (Exception e) {
+            log.error("Error en comparativaMensual", e);
+            result.put("ingresosMesActual", 0.0);
+            result.put("ingresosMesAnterior", 0.0);
+            result.put("porcentajeIngresos", 0.0);
+            result.put("usuariosMesActual", 0L);
+            result.put("usuariosMesAnterior", 0L);
+            result.put("porcentajeUsuarios", 0.0);
+            result.put("asistenciasMesActual", 0L);
+            result.put("asistenciasMesAnterior", 0L);
+            result.put("porcentajeAsistencias", 0.0);
+        }
+
+        return result;
+    }
+
+    /**
+     * Asistencias de los últimos 7 días (día por día)
+     */
+    public List<Map<String, Object>> asistenciasSemanal() {
+        List<Object[]> results = em.createNativeQuery("""
+                SELECT
+                    TO_CHAR(fecha_hora, 'dy DD/MM') AS dia,
+                    DATE(fecha_hora) AS fecha,
+                    COUNT(*) as cantidad
+                FROM asistencias
+                WHERE fecha_hora >= CURRENT_DATE - INTERVAL '6 days'
+                GROUP BY TO_CHAR(fecha_hora, 'dy DD/MM'), DATE(fecha_hora)
+                ORDER BY fecha
+                """).getResultList();
+
+        return results.stream()
+                .map(r -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("dia", r[0]);
+                    map.put("fecha", r[1]);
+                    map.put("cantidad", ((Number) r[2]).longValue());
+                    return map;
+                })
+                .toList();
+    }
+
+    /**
+     * Membresías que vencen en los próximos N días
+     */
+    public Map<String, Object> renovacionesProximas(int dias) {
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            // Membresías que vencen próximamente
+            List<Object[]> proximas = em.createNativeQuery("""
+                    SELECT
+                        pe.nombre || ' ' || pe.apellido as usuario,
+                        u.email,
+                        pe.telefono,
+                        p.nombre_plan,
+                        m.fecha_fin,
+                        CAST(m.fecha_fin - CURRENT_DATE AS INTEGER) as dias_restantes
+                    FROM membresias m
+                    JOIN usuario u ON u.id = m.usuario_id
+                    JOIN persona pe ON pe.usuario_id = u.id
+                    JOIN planes p ON p.id = m.plan_id
+                    WHERE m.estado = 'ACTIVA'
+                        AND m.fecha_fin BETWEEN CURRENT_DATE AND CURRENT_DATE + :dias
+                    ORDER BY m.fecha_fin
+                    """)
+                    .setParameter("dias", dias)
+                    .getResultList();
+
+            // Total de renovaciones próximas
+            Long totalProximas = ((Number) em.createNativeQuery("""
+                    SELECT COUNT(*) FROM membresias
+                    WHERE estado = 'ACTIVA'
+                        AND fecha_fin BETWEEN CURRENT_DATE AND CURRENT_DATE + :dias
+                    """)
+                    .setParameter("dias", dias)
+                    .getSingleResult()).longValue();
+
+            // Tasa de renovación histórica (últimos 3 meses)
+            Object[] tasaRenovacion = (Object[]) em.createNativeQuery("""
+                    SELECT
+                        COUNT(CASE WHEN estado = 'ACTIVA' THEN 1 END) as renovadas,
+                        COUNT(*) as total
+                    FROM membresias
+                    WHERE fecha_fin >= CURRENT_DATE - INTERVAL '90 days'
+                        AND fecha_fin < CURRENT_DATE
+                    """).getSingleResult();
+
+            long totalVencidas = tasaRenovacion[1] != null ? ((Number) tasaRenovacion[1]).longValue() : 0;
+            long renovadas = tasaRenovacion[0] != null ? ((Number) tasaRenovacion[0]).longValue() : 0;
+            double porcentajeRenovacion = totalVencidas > 0 ? (renovadas * 100.0 / totalVencidas) : 0;
+
+            // Proyección de ingresos
+            Object proyResult = em.createNativeQuery("""
+                    SELECT COALESCE(SUM(p.precio), 0)
+                    FROM membresias m
+                    JOIN planes p ON p.id = m.plan_id
+                    WHERE m.estado = 'ACTIVA'
+                        AND m.fecha_fin BETWEEN CURRENT_DATE AND CURRENT_DATE + :dias
+                    """)
+                    .setParameter("dias", dias)
+                    .getSingleResult();
+            Double proyeccionIngresos = proyResult != null ? ((Number) proyResult).doubleValue() : 0.0;
+
+            List<Map<String, Object>> detalles = proximas.stream()
+                    .map(r -> {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("usuario", r[0]);
+                        map.put("email", r[1]);
+                        map.put("telefono", r[2]);
+                        map.put("plan", r[3]);
+                        map.put("fechaVencimiento", r[4]);
+                        map.put("diasRestantes", r[5] != null ? ((Number) r[5]).intValue() : 0);
+                        return map;
+                    })
+                    .toList();
+
+            result.put("total", totalProximas);
+            result.put("detalles", detalles);
+            result.put("tasaRenovacion", porcentajeRenovacion);
+            result.put("proyeccionIngresos", proyeccionIngresos);
+            result.put("diasConsiderados", dias);
+        } catch (Exception e) {
+            log.error("Error en renovacionesProximas", e);
+            result.put("total", 0L);
+            result.put("detalles", new java.util.ArrayList<>());
+            result.put("tasaRenovacion", 0.0);
+            result.put("proyeccionIngresos", 0.0);
+            result.put("diasConsiderados", dias);
+        }
+
+        return result;
+    }
+
+    /**
+     * Calcula el porcentaje de cambio entre dos valores
+     */
+    private double calcularPorcentajeCambio(double valorAnterior, double valorActual) {
+        if (valorAnterior == 0) {
+            return valorActual > 0 ? 100.0 : 0.0;
+        }
+        return ((valorActual - valorAnterior) / valorAnterior) * 100.0;
+    }
+
+    // ========================================
+    // MÉTODOS PARA EXPORTACIÓN
+    // ========================================
+
+    public List<com.gym.backend.Reportes.Application.DTO.IngresoDetalladoDTO> obtenerIngresosDetallados(
+            com.gym.backend.Reportes.Application.DTO.FiltroIngresoDTO filtro) {
+
+        String sql = """
+                SELECT
+                    p.fecha_pago,
+                    u.dni,
+                    u.nombre || ' ' || u.apellido as nombre_completo,
+                    pl.nombre_plan,
+                    p.monto,
+                    p.metodo_pago,
+                    p.estado,
+                    p.codigo_pago,
+                    p.observacion
+                FROM pagos p
+                JOIN membresias m ON p.membresia_id = m.id
+                JOIN usuarios u ON m.usuario_id = u.id
+                JOIN planes pl ON m.plan_id = pl.id
+                WHERE 1=1
+                """;
+
+        if (filtro.getFechaInicio() != null) {
+            sql += " AND p.fecha_pago >= :fechaInicio";
+        }
+        if (filtro.getFechaFin() != null) {
+            sql += " AND p.fecha_pago <= :fechaFin";
+        }
+        if (filtro.getEstado() != null && !filtro.getEstado().isBlank()) {
+            sql += " AND p.estado = :estado";
+        }
+        if (filtro.getMetodoPago() != null && !filtro.getMetodoPago().isBlank()) {
+            sql += " AND p.metodo_pago = :metodoPago";
+        }
+        if (filtro.getPlanId() != null) {
+            sql += " AND pl.id = :planId";
+        }
+
+        sql += " ORDER BY p.fecha_pago DESC";
+
+        var query = em.createNativeQuery(sql);
+
+        if (filtro.getFechaInicio() != null) {
+            query.setParameter("fechaInicio", filtro.getFechaInicio());
+        }
+        if (filtro.getFechaFin() != null) {
+            query.setParameter("fechaFin", filtro.getFechaFin());
+        }
+        if (filtro.getEstado() != null && !filtro.getEstado().isBlank()) {
+            query.setParameter("estado", filtro.getEstado());
+        }
+        if (filtro.getMetodoPago() != null && !filtro.getMetodoPago().isBlank()) {
+            query.setParameter("metodoPago", filtro.getMetodoPago());
+        }
+        if (filtro.getPlanId() != null) {
+            query.setParameter("planId", filtro.getPlanId());
+        }
+
+        @SuppressWarnings("unchecked")
+        List<Object[]> resultados = query.getResultList();
+
+        return resultados.stream()
+                .map(row -> com.gym.backend.Reportes.Application.DTO.IngresoDetalladoDTO.builder()
+                        .fechaPago((LocalDateTime) row[0])
+                        .usuarioDni((String) row[1])
+                        .usuarioNombre((String) row[2])
+                        .planNombre((String) row[3])
+                        .monto(((Number) row[4]).doubleValue())
+                        .metodoPago((String) row[5])
+                        .estado((String) row[6])
+                        .codigoPago((String) row[7])
+                        .observacion((String) row[8])
+                        .build())
+                .toList();
+    }
+
+    public com.gym.backend.Reportes.Application.DTO.ResumenIngresoDTO obtenerResumenIngresos(
+            com.gym.backend.Reportes.Application.DTO.FiltroIngresoDTO filtro) {
+
+        String sql = """
+                SELECT
+                    COALESCE(SUM(CASE WHEN p.estado = 'CONFIRMADO' THEN p.monto ELSE 0 END), 0) as total_confirmado,
+                    COALESCE(SUM(CASE WHEN p.estado = 'PENDIENTE' THEN p.monto ELSE 0 END), 0) as total_pendiente,
+                    COALESCE(SUM(CASE WHEN p.estado = 'CANCELADO' THEN p.monto ELSE 0 END), 0) as total_cancelado,
+                    COALESCE(SUM(p.monto), 0) as total_general,
+                    COUNT(*) as cantidad_transacciones,
+                    SUM(CASE WHEN p.estado = 'CONFIRMADO' THEN 1 ELSE 0 END) as cantidad_confirmadas,
+                    SUM(CASE WHEN p.estado = 'PENDIENTE' THEN 1 ELSE 0 END) as cantidad_pendientes,
+                    SUM(CASE WHEN p.estado = 'CANCELADO' THEN 1 ELSE 0 END) as cantidad_canceladas
+                FROM pagos p
+                JOIN membresias m ON p.membresia_id = m.id
+                JOIN planes pl ON m.plan_id = pl.id
+                WHERE 1=1
+                """;
+
+        if (filtro.getFechaInicio() != null) {
+            sql += " AND p.fecha_pago >= :fechaInicio";
+        }
+        if (filtro.getFechaFin() != null) {
+            sql += " AND p.fecha_pago <= :fechaFin";
+        }
+        if (filtro.getEstado() != null && !filtro.getEstado().isBlank()) {
+            sql += " AND p.estado = :estado";
+        }
+        if (filtro.getMetodoPago() != null && !filtro.getMetodoPago().isBlank()) {
+            sql += " AND p.metodo_pago = :metodoPago";
+        }
+        if (filtro.getPlanId() != null) {
+            sql += " AND pl.id = :planId";
+        }
+
+        var query = em.createNativeQuery(sql);
+
+        if (filtro.getFechaInicio() != null) {
+            query.setParameter("fechaInicio", filtro.getFechaInicio());
+        }
+        if (filtro.getFechaFin() != null) {
+            query.setParameter("fechaFin", filtro.getFechaFin());
+        }
+        if (filtro.getEstado() != null && !filtro.getEstado().isBlank()) {
+            query.setParameter("estado", filtro.getEstado());
+        }
+        if (filtro.getMetodoPago() != null && !filtro.getMetodoPago().isBlank()) {
+            query.setParameter("metodoPago", filtro.getMetodoPago());
+        }
+        if (filtro.getPlanId() != null) {
+            query.setParameter("planId", filtro.getPlanId());
+        }
+
+        Object[] result = (Object[]) query.getSingleResult();
+
+        return com.gym.backend.Reportes.Application.DTO.ResumenIngresoDTO.builder()
+                .totalConfirmado(((Number) result[0]).doubleValue())
+                .totalPendiente(((Number) result[1]).doubleValue())
+                .totalCancelado(((Number) result[2]).doubleValue())
+                .totalGeneral(((Number) result[3]).doubleValue())
+                .cantidadTransacciones(((Number) result[4]).intValue())
+                .cantidadConfirmadas(((Number) result[5]).intValue())
+                .cantidadPendientes(((Number) result[6]).intValue())
+                .cantidadCanceladas(((Number) result[7]).intValue())
+                .build();
     }
 }

@@ -36,6 +36,9 @@ public class RutinaEntity {
     @Column(nullable = false)
     private boolean activa = false;
 
+    @Column(name = "es_plantilla", nullable = false)
+    private boolean esPlantilla = false;
+
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
 

@@ -28,4 +28,5 @@ public class UsuarioResponse {
     private Boolean activo;
     private Boolean emailVerificado;
     private LocalDate fechaNacimiento;
+    private String fotoPerfilUrl;
 }

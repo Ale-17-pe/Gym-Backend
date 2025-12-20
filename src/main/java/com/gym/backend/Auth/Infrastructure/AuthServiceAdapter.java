@@ -51,7 +51,27 @@ public class AuthServiceAdapter implements AuthServicePort {
             throw new UsuarioValidationException("Credenciales inválidas");
         }
 
-        // Verificar si es ADMINISTRADOR - requiere 2FA
+        // PASO 1: Verificar si el email está verificado
+        if (!usuario.tieneEmailVerificado()) {
+            log.warn("Login fallido - Email no verificado para: {}", command.emailOrDni());
+            return new AuthResponse(
+                    null,
+                    null,
+                    usuario.getId(),
+                    usuario.getNombreCompleto(),
+                    usuario.getEmail(),
+                    usuario.getDni(),
+                    usuario.getRol().name(),
+                    usuario.getPersona() != null ? usuario.getPersona().getGenero().name() : "PREFIERO_NO_DECIR",
+                    usuario.getActivo(),
+                    usuario.getPersona() != null ? usuario.getPersona().getFotoPerfilUrl() : null,
+                    null,
+                    LocalDateTime.now(),
+                    false,
+                    "EMAIL_NOT_VERIFIED");
+        }
+
+        // PASO 2: Si es ADMINISTRADOR - requiere 2FA
         if (usuario.esAdministrador()) {
             log.info("Usuario ADMIN detectado, generando código 2FA: {}", usuario.getEmail());
             twoFactorAuthService.generateCode(usuario.getEmail());
@@ -66,10 +86,11 @@ public class AuthServiceAdapter implements AuthServicePort {
                     usuario.getRol().name(),
                     usuario.getPersona() != null ? usuario.getPersona().getGenero().name() : "PREFIERO_NO_DECIR",
                     usuario.getActivo(),
+                    usuario.getPersona() != null ? usuario.getPersona().getFotoPerfilUrl() : null,
                     null,
                     LocalDateTime.now(),
                     true,
-                    "Código de verificación generado. Revisa tu email.");
+                    "Código 2FA enviado a tu email.");
         }
 
         // Login normal para otros roles
@@ -88,6 +109,7 @@ public class AuthServiceAdapter implements AuthServicePort {
                 usuario.getRol().name(),
                 usuario.getPersona() != null ? usuario.getPersona().getGenero().name() : "PREFIERO_NO_DECIR",
                 usuario.getActivo(),
+                usuario.getPersona() != null ? usuario.getPersona().getFotoPerfilUrl() : null,
                 expiracion,
                 LocalDateTime.now(),
                 false,
@@ -130,6 +152,7 @@ public class AuthServiceAdapter implements AuthServicePort {
                     usuarioCreado.getPersona() != null ? usuarioCreado.getPersona().getGenero().name()
                             : "PREFIERO_NO_DECIR",
                     usuarioCreado.getActivo(),
+                    usuarioCreado.getPersona() != null ? usuarioCreado.getPersona().getFotoPerfilUrl() : null,
                     expiracion,
                     LocalDateTime.now(),
                     false,

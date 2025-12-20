@@ -26,24 +26,26 @@ public class ReporteTopPlanesPDF {
         document.open();
 
         Image logo = ReportUtils.loadLogo();
-        if (logo != null) document.add(logo);
+        if (logo != null)
+            document.add(logo);
 
         document.add(new Paragraph(
                 "REPORTE: TOP PLANES MÁS VENDIDOS\n\n",
-                FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18)
-        ));
+                FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18)));
 
-        PdfPTable table = new PdfPTable(2);
+        PdfPTable table = new PdfPTable(3);
         table.setWidthPercentage(100);
         table.addCell("Plan");
         table.addCell("Cantidad");
+        table.addCell("Total Ingresos (S/.)");
 
         LinkedHashMap<String, Number> chartData = new LinkedHashMap<>();
 
         for (TopPlanes r : data) {
-            table.addCell(r.nombrePlan());
+            table.addCell(r.planNombre());
             table.addCell(r.cantidad().toString());
-            chartData.put(r.nombrePlan(), r.cantidad());
+            table.addCell(String.format("%.2f", r.totalIngresos()));
+            chartData.put(r.planNombre(), r.cantidad());
         }
 
         document.add(table);

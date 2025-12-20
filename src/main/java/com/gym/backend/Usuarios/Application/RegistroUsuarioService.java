@@ -138,17 +138,8 @@ public class RegistroUsuarioService {
         EmpleadoEntity empleadoGuardado = empleadoJpa.save(empleado);
         log.info("✅ Empleado creado con ID: {} - Código: {}", empleadoGuardado.getId(), codigoEmpleado);
 
-        // Si es ENTRENADOR, crear registro adicional
-        if (rol == Rol.ENTRENADOR) {
-            EntrenadorEntity entrenador = EntrenadorEntity.builder()
-                    .empleado(empleadoGuardado)
-                    .usuarioId(usuarioId)
-                    .activo(true)
-                    .build();
-
-            EntrenadorEntity entrenadorGuardado = entrenadorJpa.save(entrenador);
-            log.info("✅ Entrenador creado con ID: {}", entrenadorGuardado.getId());
-        }
+        // NOTA: El EntrenadorEntity se crea aparte vía EntrenadorController
+        // para poder asignar especialidad, experiencia, etc.
     }
 
     private String generarCodigoEmpleado(Rol rol) {

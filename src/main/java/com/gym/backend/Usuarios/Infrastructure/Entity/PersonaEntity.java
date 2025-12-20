@@ -1,5 +1,6 @@
 package com.gym.backend.Usuarios.Infrastructure.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.gym.backend.Usuarios.Domain.Enum.Genero;
 import jakarta.persistence.*;
 import lombok.*;
@@ -25,6 +26,7 @@ public class PersonaEntity {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id", unique = true, nullable = false)
+    @JsonIgnore
     private UsuarioEntity usuario;
 
     @Column(nullable = false, length = 100)
@@ -49,7 +51,7 @@ public class PersonaEntity {
     @Column(length = 255)
     private String direccion;
 
-    @Column(name = "foto_perfil_url", length = 500)
+    @Column(name = "foto_perfil_url", columnDefinition = "TEXT")
     private String fotoPerfilUrl;
 
     @Column(name = "fecha_creacion", updatable = false)

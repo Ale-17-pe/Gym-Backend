@@ -1,5 +1,7 @@
 package com.gym.backend.Usuarios.Infrastructure.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.gym.backend.Usuarios.Domain.Enum.Turno;
 import jakarta.persistence.*;
 import lombok.*;
@@ -25,8 +27,9 @@ public class EmpleadoEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "persona_id", unique = true, nullable = false)
+    @JsonIgnoreProperties({ "usuario", "hibernateLazyInitializer", "handler" })
     private PersonaEntity persona;
 
     // Campo directo para consultas rápidas
@@ -68,8 +71,10 @@ public class EmpleadoEntity {
     @Column(name = "fecha_actualizacion")
     private LocalDateTime fechaActualizacion;
 
-    // Relación con Entrenador (si es entrenador)
+    // Relación con Entrenador (si es entrenador) - ignorar en JSON para evitar
+    // ciclo
     @OneToOne(mappedBy = "empleado", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
     private EntrenadorEntity entrenador;
 
     @PrePersist

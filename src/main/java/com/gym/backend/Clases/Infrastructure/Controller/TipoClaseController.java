@@ -56,4 +56,11 @@ public class TipoClaseController {
         useCase.activar(id);
         return ResponseEntity.ok().build();
     }
+
+    @DeleteMapping("/{id}/eliminar")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+        useCase.eliminar(id);
+        return ResponseEntity.ok().build();
+    }
 }

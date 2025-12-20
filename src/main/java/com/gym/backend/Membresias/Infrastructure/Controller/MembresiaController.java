@@ -4,9 +4,14 @@ import com.gym.backend.Membresias.Application.Dto.CrearMembresiaRequest;
 import com.gym.backend.Membresias.Application.Dto.MembresiaResponse;
 import com.gym.backend.Membresias.Application.Dto.MembresiaDTO;
 import com.gym.backend.Membresias.Application.Mapper.MembresiaMapper;
+import com.gym.backend.Membresias.Domain.Membresia;
 import com.gym.backend.Membresias.Domain.MembresiaUseCase;
 import com.gym.backend.Qr.Domain.QrUseCase;
 import com.gym.backend.Asistencias.Domain.AsistenciaUseCase;
+import com.gym.backend.Usuarios.Domain.UsuarioUseCase;
+import com.gym.backend.Usuarios.Domain.Usuario;
+import com.gym.backend.Planes.Domain.PlanUseCase;
+import com.gym.backend.Planes.Domain.Plan;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,41 +36,72 @@ public class MembresiaController {
     private final MembresiaMapper mapper;
     private final QrUseCase qrUseCase;
     private final AsistenciaUseCase asistenciaUseCase;
+    private final UsuarioUseCase usuarioUseCase;
+    private final PlanUseCase planUseCase;
+
+    private MembresiaResponse enrichResponse(Membresia membresia) {
+        MembresiaResponse response = mapper.toResponse(membresia);
+
+        // Obtener nombre del usuario
+        try {
+            Usuario usuario = usuarioUseCase.obtenerConDatosCompletos(membresia.getUsuarioId());
+            if (usuario != null && usuario.getPersona() != null) {
+                response.setNombreUsuario(usuario.getPersona().getNombre() + " " + usuario.getPersona().getApellido());
+                response.setDniUsuario(usuario.getPersona().getDni());
+                response.setEmailUsuario(usuario.getEmail());
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo obtener info de usuario {}: {}", membresia.getUsuarioId(), e.getMessage());
+        }
+
+        // Obtener nombre del plan
+        try {
+            Plan plan = planUseCase.obtener(membresia.getPlanId());
+            if (plan != null) {
+                response.setNombrePlan(plan.getNombrePlan());
+                response.setPrecioPlan(plan.getPrecio());
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo obtener info de plan {}: {}", membresia.getPlanId(), e.getMessage());
+        }
+
+        return response;
+    }
 
     @PostMapping
     public ResponseEntity<MembresiaResponse> crear(@Valid @RequestBody CrearMembresiaRequest request) {
         var membresia = mapper.toDomainFromRequest(request);
         var creada = useCase.crear(membresia);
-        return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toResponse(creada));
+        return ResponseEntity.status(HttpStatus.CREATED).body(enrichResponse(creada));
     }
 
     @PostMapping("/{id}/extender")
     public ResponseEntity<MembresiaResponse> extender(@PathVariable Long id, @RequestParam Integer dias) {
         var membresia = useCase.extender(id, dias);
-        return ResponseEntity.ok(mapper.toResponse(membresia));
+        return ResponseEntity.ok(enrichResponse(membresia));
     }
 
     @PostMapping("/{id}/suspender")
     public ResponseEntity<MembresiaResponse> suspender(@PathVariable Long id) {
         var membresia = useCase.suspender(id);
-        return ResponseEntity.ok(mapper.toResponse(membresia));
+        return ResponseEntity.ok(enrichResponse(membresia));
     }
 
     @PostMapping("/{id}/reactivar")
     public ResponseEntity<MembresiaResponse> reactivar(@PathVariable Long id) {
         var membresia = useCase.reactivar(id);
-        return ResponseEntity.ok(mapper.toResponse(membresia));
+        return ResponseEntity.ok(enrichResponse(membresia));
     }
 
     @PostMapping("/{id}/cancelar")
     public ResponseEntity<MembresiaResponse> cancelar(@PathVariable Long id) {
         var membresia = useCase.cancelar(id);
-        return ResponseEntity.ok(mapper.toResponse(membresia));
+        return ResponseEntity.ok(enrichResponse(membresia));
     }
 
     @GetMapping
     public List<MembresiaResponse> listar() {
-        return useCase.listar().stream().map(mapper::toResponse).toList();
+        return useCase.listar().stream().map(this::enrichResponse).toList();
     }
 
     @GetMapping("/paginated")

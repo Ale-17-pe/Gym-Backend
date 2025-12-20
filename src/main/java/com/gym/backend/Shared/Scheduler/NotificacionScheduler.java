@@ -44,9 +44,9 @@ public class NotificacionScheduler {
     private PlanMapper planMapper;
 
     /**
-     * Ejecuta verificación diaria a las 9:00 AM
+     * Ejecuta verificación diaria a las 6:00 AM (horario de apertura del gym)
      */
-    @Scheduled(cron = "0 0 9 * * *")
+    @Scheduled(cron = "0 0 5 * * *")
     public void verificarMembresiasYNotificar() {
         LocalDate hoy = LocalDate.now();
 
@@ -65,7 +65,8 @@ public class NotificacionScheduler {
      * Notifica membresías próximas a vencer
      */
     private void verificarProximasVencer() {
-        List<Membresia> proximasVencer = membresiaRepository.listarPorVencer();
+        LocalDate fechaLimite = LocalDate.now().plusDays(7); // Buscar membresías que vencen en los próximos 7 días
+        List<Membresia> proximasVencer = membresiaRepository.listarPorVencer(fechaLimite);
 
         for (Membresia membresia : proximasVencer) {
             try {

@@ -48,4 +48,18 @@ public interface ReportesRepositoryPort {
 
     com.gym.backend.Reportes.Domain.DTO.ResumenIngresoDTO resumenIngresos(
             com.gym.backend.Reportes.Domain.DTO.FiltroIngresoDTO filtro);
+
+    // ========== NUEVOS MÉTODOS ==========
+    Map<String, Object> comparativaMensual();
+
+    List<Map<String, Object>> asistenciasSemanal();
+
+    Map<String, Object> renovacionesProximas(int dias);
+
+    // ========== MÉTODOS PARA EXPORTACIÓN ==========
+    List<com.gym.backend.Reportes.Application.DTO.IngresoDetalladoDTO> obtenerIngresosDetallados(
+            com.gym.backend.Reportes.Application.DTO.FiltroIngresoDTO filtro);
+
+    com.gym.backend.Reportes.Application.DTO.ResumenIngresoDTO obtenerResumenIngresos(
+            com.gym.backend.Reportes.Application.DTO.FiltroIngresoDTO filtro);
 }

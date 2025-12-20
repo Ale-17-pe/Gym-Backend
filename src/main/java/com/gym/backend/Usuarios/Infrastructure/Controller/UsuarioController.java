@@ -109,4 +109,28 @@ public class UsuarioController {
         useCase.verificarUsuarioActivo(id);
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/{id}/verificar-email")
+    public ResponseEntity<UsuarioResponse> verificarEmail(@PathVariable Long id) {
+        log.info("Verificando email del usuario: {}", id);
+        var usuario = useCase.marcarEmailVerificado(id);
+        return ResponseEntity.ok(mapper.toResponse(usuario));
+    }
+
+    @PostMapping("/{id}/enviar-reset")
+    public ResponseEntity<String> enviarReset(@PathVariable Long id) {
+        log.info("Enviando reset de password al usuario: {}", id);
+        useCase.enviarResetPassword(id);
+        return ResponseEntity.ok("Código de reset enviado al email");
+    }
+
+    @PostMapping("/{id}/avatar")
+    public ResponseEntity<UsuarioResponse> subirAvatar(
+            @PathVariable Long id,
+            @RequestBody java.util.Map<String, String> body) {
+        String avatarUrl = body.get("avatarUrl");
+        log.info("Actualizando avatar del usuario: {}", id);
+        var usuario = useCase.actualizarAvatar(id, avatarUrl);
+        return ResponseEntity.ok(mapper.toResponse(usuario));
+    }
 }

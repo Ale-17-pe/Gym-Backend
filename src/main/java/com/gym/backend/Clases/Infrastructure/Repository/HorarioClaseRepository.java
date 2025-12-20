@@ -16,7 +16,7 @@ public interface HorarioClaseRepository extends JpaRepository<HorarioClaseEntity
 
     List<HorarioClaseEntity> findByDiaSemanaAndActivoTrue(Integer diaSemana);
 
-    List<HorarioClaseEntity> findByInstructorIdAndActivoTrue(Long instructorId);
+    List<HorarioClaseEntity> findByEntrenadorIdAndActivoTrue(Long entrenadorId);
 
     List<HorarioClaseEntity> findByTipoClaseIdAndActivoTrue(Long tipoClaseId);
 

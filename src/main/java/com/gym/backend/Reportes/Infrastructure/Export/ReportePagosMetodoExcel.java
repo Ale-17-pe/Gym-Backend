@@ -38,7 +38,7 @@ public class ReportePagosMetodoExcel {
         int row = 6;
         for (PagosPorMetodo r : data) {
             Row rw = sheet.createRow(row++);
-            rw.createCell(0).setCellValue(r.metodo());
+            rw.createCell(0).setCellValue(r.metodoPago());
             rw.createCell(1).setCellValue(r.cantidad());
             rw.createCell(2).setCellValue(r.total());
         }

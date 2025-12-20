@@ -102,4 +102,22 @@ public class ReportesController {
                 "ingresosMensuales", useCase.ingresosMensuales(),
                 "asistenciasDiarias", useCase.asistenciasDiarias());
     }
+
+    // ========== NUEVOS ENDPOINTS ==========
+
+    @GetMapping("/comparativa-mensual")
+    public ResponseEntity<Map<String, Object>> comparativaMensual() {
+        return ResponseEntity.ok(useCase.comparativaMensual());
+    }
+
+    @GetMapping("/asistencias-semanal")
+    public ResponseEntity<List<Map<String, Object>>> asistenciasSemanal() {
+        return ResponseEntity.ok(useCase.asistenciasSemanal());
+    }
+
+    @GetMapping("/renovaciones-proximas")
+    public ResponseEntity<Map<String, Object>> renovacionesProximas(
+            @RequestParam(defaultValue = "30") int dias) {
+        return ResponseEntity.ok(useCase.renovacionesProximas(dias));
+    }
 }

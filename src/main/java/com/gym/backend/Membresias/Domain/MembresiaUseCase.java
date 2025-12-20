@@ -171,7 +171,8 @@ public class MembresiaUseCase {
 
     @Transactional(readOnly = true)
     public List<Membresia> listarPorVencer() {
-        return repo.listarPorVencer();
+        LocalDate fechaLimite = LocalDate.now().plusDays(7);
+        return repo.listarPorVencer(fechaLimite);
     }
 
     @Transactional(readOnly = true)
@@ -195,7 +196,8 @@ public class MembresiaUseCase {
     public void vencerMembresiasAutomaticamente() {
         log.info("Ejecutando tarea programada para vencer membresías...");
 
-        List<Membresia> membresiasPorVencer = repo.listarPorVencer();
+        LocalDate fechaLimite = LocalDate.now().plusDays(7);
+        List<Membresia> membresiasPorVencer = repo.listarPorVencer(fechaLimite);
         int contador = 0;
 
         for (Membresia membresia : membresiasPorVencer) {

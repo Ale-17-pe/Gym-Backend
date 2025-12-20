@@ -1,4 +1,4 @@
 package com.gym.backend.Reportes.Domain.Record;
 
-public record UsuariosNuevos(String mes, Long cantidad) {}
-
+public record UsuariosNuevos(Integer mes, Integer anio, Integer cantidad) {
+}

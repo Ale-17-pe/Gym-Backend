@@ -75,8 +75,8 @@ public class MembresiaRepositoryAdapter implements MembresiaRepositoryPort {
     }
 
     @Override
-    public List<Membresia> listarPorVencer() {
-        return jpa.findPorVencer().stream().map(this::toDomain).toList();
+    public List<Membresia> listarPorVencer(LocalDate fechaLimite) {
+        return jpa.findPorVencer(fechaLimite).stream().map(this::toDomain).toList();
     }
 
     @Override
@@ -96,8 +96,8 @@ public class MembresiaRepositoryAdapter implements MembresiaRepositoryPort {
     }
 
     @Override
-    public Long contarPorVencer() {
-        return jpa.countPorVencer();
+    public Long contarPorVencer(LocalDate fechaLimite) {
+        return jpa.countPorVencer(fechaLimite);
     }
 
     @Override

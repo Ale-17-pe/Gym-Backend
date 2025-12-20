@@ -18,5 +18,14 @@ public class PagoResponse {
     private LocalDateTime fechaCreacion;
     private LocalDateTime fechaPago;
     private String codigoPago;
-    private String codigoQr; // QR en base64
+    private String codigoQr;
+
+    // Datos del usuario
+    private String nombreUsuario;
+    private String dniUsuario;
+    private String emailUsuario;
+
+    // Datos del plan
+    private String nombrePlan;
+    private Double precioPlan;
 }

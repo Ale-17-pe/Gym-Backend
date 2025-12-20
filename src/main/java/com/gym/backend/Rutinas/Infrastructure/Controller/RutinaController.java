@@ -30,7 +30,7 @@ public class RutinaController {
     // ============ CRUD Rutinas ============
 
     @PostMapping
-    @Operation(summary = "Crear una nueva rutina")
+    @Operation(summary = "Crear una nueva rutina personal")
     @PreAuthorize("hasAnyRole('CLIENTE', 'ADMINISTRADOR')")
     public ResponseEntity<Rutina> crearRutina(
             @RequestHeader("Authorization") String authHeader,
@@ -41,12 +41,43 @@ public class RutinaController {
     }
 
     @GetMapping
-    @Operation(summary = "Listar mis rutinas")
+    @Operation(summary = "Listar mis rutinas personales")
     @PreAuthorize("hasAnyRole('CLIENTE', 'ADMINISTRADOR')")
     public ResponseEntity<List<Rutina>> listarMisRutinas(
             @RequestHeader("Authorization") String authHeader) {
         Long usuarioId = extraerUsuarioId(authHeader);
         return ResponseEntity.ok(rutinaUseCase.listarRutinasUsuario(usuarioId));
+    }
+
+    // ============ Plantillas Públicas (Admin crea, Cliente usa) ============
+
+    @PostMapping("/plantilla")
+    @Operation(summary = "Crear una rutina plantilla pública (solo admin)")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ResponseEntity<Rutina> crearPlantilla(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody CrearRutinaRequest request) {
+        Long usuarioId = extraerUsuarioId(authHeader);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(rutinaUseCase.crearPlantilla(usuarioId, request));
+    }
+
+    @GetMapping("/plantillas")
+    @Operation(summary = "Listar plantillas públicas disponibles")
+    @PreAuthorize("hasAnyRole('CLIENTE', 'ADMINISTRADOR')")
+    public ResponseEntity<List<Rutina>> listarPlantillas() {
+        return ResponseEntity.ok(rutinaUseCase.listarPlantillas());
+    }
+
+    @PostMapping("/plantillas/{plantillaId}/copiar")
+    @Operation(summary = "Copiar una plantilla como rutina personal")
+    @PreAuthorize("hasAnyRole('CLIENTE', 'ADMINISTRADOR')")
+    public ResponseEntity<Rutina> copiarPlantilla(
+            @PathVariable Long plantillaId,
+            @RequestHeader("Authorization") String authHeader) {
+        Long usuarioId = extraerUsuarioId(authHeader);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(rutinaUseCase.copiarPlantillaComoRutina(plantillaId, usuarioId));
     }
 
     @GetMapping("/activa")

@@ -41,11 +41,11 @@ public class ReportePagosMetodoPDF {
         LinkedHashMap<String, Number> chartData = new LinkedHashMap<>();
 
         for (PagosPorMetodo r : data) {
-            table.addCell(r.metodo());
+            table.addCell(r.metodoPago());
             table.addCell(r.cantidad().toString());
             table.addCell(String.valueOf(r.total()));
 
-            chartData.put(r.metodo(), r.total());
+            chartData.put(r.metodoPago(), r.total());
         }
 
         doc.add(table);
