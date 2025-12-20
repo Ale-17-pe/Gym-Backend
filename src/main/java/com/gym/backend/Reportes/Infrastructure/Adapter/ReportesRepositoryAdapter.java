@@ -189,7 +189,7 @@ public class ReportesRepositoryAdapter implements ReportesRepositoryPort {
                 return jpa.renovacionesProximas(dias);
         }
 
-        // ========== MÉTODOS PARA EXPORTACIÓN ==========
+        // ========== MÉTODOS PARA EXPORTACIÓN (USAN Application.DTO) ==========
 
         @Override
         public List<com.gym.backend.Reportes.Application.DTO.IngresoDetalladoDTO> obtenerIngresosDetallados(

@@ -357,8 +357,8 @@ public class ReportesJpaRepository {
         StringBuilder sql = new StringBuilder("""
                 SELECT
                     p.fecha_pago,
-                    u.nombre || ' ' || u.apellido as usuario,
-                    u.dni,
+                    pe.nombre || ' ' || pe.apellido as usuario,
+                    pe.dni,
                     pl.nombre_plan,
                     p.monto,
                     p.metodo_pago,
@@ -367,7 +367,8 @@ public class ReportesJpaRepository {
                     p.observaciones
                 FROM pagos p
                 JOIN membresias m ON m.pago_id = p.id
-                JOIN usuarios u ON u.id = m.usuario_id
+                JOIN usuario u ON u.id = m.usuario_id
+                JOIN persona pe ON pe.usuario_id = u.id
                 JOIN planes pl ON pl.id = m.plan_id
                 WHERE p.fecha_pago BETWEEN :inicio AND :fin
                 """);
@@ -685,25 +686,24 @@ public class ReportesJpaRepository {
 
     // ========================================
     // MÉTODOS PARA EXPORTACIÓN
-    // ========================================
-
+    @SuppressWarnings("unchecked")
     public List<com.gym.backend.Reportes.Application.DTO.IngresoDetalladoDTO> obtenerIngresosDetallados(
             com.gym.backend.Reportes.Application.DTO.FiltroIngresoDTO filtro) {
 
         String sql = """
                 SELECT
                     p.fecha_pago,
-                    u.dni,
-                    u.nombre || ' ' || u.apellido as nombre_completo,
+                    pe.dni,
+                    pe.nombre || ' ' || pe.apellido as nombre_completo,
                     pl.nombre_plan,
                     p.monto,
                     p.metodo_pago,
                     p.estado,
-                    p.codigo_pago,
-                    p.observacion
+                    p.codigo_pago
                 FROM pagos p
-                JOIN membresias m ON p.membresia_id = m.id
-                JOIN usuarios u ON m.usuario_id = u.id
+                JOIN membresias m ON m.pago_id = p.id
+                JOIN usuario u ON m.usuario_id = u.id
+                JOIN persona pe ON pe.usuario_id = u.id
                 JOIN planes pl ON m.plan_id = pl.id
                 WHERE 1=1
                 """;
@@ -744,22 +744,29 @@ public class ReportesJpaRepository {
             query.setParameter("planId", filtro.getPlanId());
         }
 
-        @SuppressWarnings("unchecked")
-        List<Object[]> resultados = query.getResultList();
+        List<Object[]> results = query.getResultList();
+        return results.stream().map(row -> {
+            // Manejo robusto de fechas nulas
+            java.time.LocalDateTime fechaPago = null;
+            if (row[0] != null) {
+                if (row[0] instanceof java.sql.Timestamp) {
+                    fechaPago = ((java.sql.Timestamp) row[0]).toLocalDateTime();
+                } else if (row[0] instanceof java.time.LocalDateTime) {
+                    fechaPago = (java.time.LocalDateTime) row[0];
+                }
+            }
 
-        return resultados.stream()
-                .map(row -> com.gym.backend.Reportes.Application.DTO.IngresoDetalladoDTO.builder()
-                        .fechaPago((LocalDateTime) row[0])
-                        .usuarioDni((String) row[1])
-                        .usuarioNombre((String) row[2])
-                        .planNombre((String) row[3])
-                        .monto(((Number) row[4]).doubleValue())
-                        .metodoPago((String) row[5])
-                        .estado((String) row[6])
-                        .codigoPago((String) row[7])
-                        .observacion((String) row[8])
-                        .build())
-                .toList();
+            return com.gym.backend.Reportes.Application.DTO.IngresoDetalladoDTO.builder()
+                    .fechaPago(fechaPago)
+                    .usuarioDni((String) row[1])
+                    .usuarioNombre((String) row[2])
+                    .planNombre((String) row[3])
+                    .monto(row[4] != null ? ((Number) row[4]).doubleValue() : 0.0)
+                    .metodoPago((String) row[5])
+                    .estado((String) row[6])
+                    .codigoPago((String) row[7])
+                    .build();
+        }).collect(java.util.stream.Collectors.toList());
     }
 
     public com.gym.backend.Reportes.Application.DTO.ResumenIngresoDTO obtenerResumenIngresos(
@@ -771,12 +778,12 @@ public class ReportesJpaRepository {
                     COALESCE(SUM(CASE WHEN p.estado = 'PENDIENTE' THEN p.monto ELSE 0 END), 0) as total_pendiente,
                     COALESCE(SUM(CASE WHEN p.estado = 'CANCELADO' THEN p.monto ELSE 0 END), 0) as total_cancelado,
                     COALESCE(SUM(p.monto), 0) as total_general,
-                    COUNT(*) as cantidad_transacciones,
-                    SUM(CASE WHEN p.estado = 'CONFIRMADO' THEN 1 ELSE 0 END) as cantidad_confirmadas,
-                    SUM(CASE WHEN p.estado = 'PENDIENTE' THEN 1 ELSE 0 END) as cantidad_pendientes,
-                    SUM(CASE WHEN p.estado = 'CANCELADO' THEN 1 ELSE 0 END) as cantidad_canceladas
+                    COALESCE(COUNT(*), 0) as cantidad_transacciones,
+                    COALESCE(SUM(CASE WHEN p.estado = 'CONFIRMADO' THEN 1 ELSE 0 END), 0) as cantidad_confirmadas,
+                    COALESCE(SUM(CASE WHEN p.estado = 'PENDIENTE' THEN 1 ELSE 0 END), 0) as cantidad_pendientes,
+                    COALESCE(SUM(CASE WHEN p.estado = 'CANCELADO' THEN 1 ELSE 0 END), 0) as cantidad_canceladas
                 FROM pagos p
-                JOIN membresias m ON p.membresia_id = m.id
+                JOIN membresias m ON m.pago_id = p.id
                 JOIN planes pl ON m.plan_id = pl.id
                 WHERE 1=1
                 """;
@@ -815,17 +822,35 @@ public class ReportesJpaRepository {
             query.setParameter("planId", filtro.getPlanId());
         }
 
-        Object[] result = (Object[]) query.getSingleResult();
+        try {
+            Object[] result = (Object[]) query.getSingleResult();
 
-        return com.gym.backend.Reportes.Application.DTO.ResumenIngresoDTO.builder()
-                .totalConfirmado(((Number) result[0]).doubleValue())
-                .totalPendiente(((Number) result[1]).doubleValue())
-                .totalCancelado(((Number) result[2]).doubleValue())
-                .totalGeneral(((Number) result[3]).doubleValue())
-                .cantidadTransacciones(((Number) result[4]).intValue())
-                .cantidadConfirmadas(((Number) result[5]).intValue())
-                .cantidadPendientes(((Number) result[6]).intValue())
-                .cantidadCanceladas(((Number) result[7]).intValue())
-                .build();
+            // Verificación extra por si result es null (raro con agregaciones pero posible)
+            if (result == null) {
+                return com.gym.backend.Reportes.Application.DTO.ResumenIngresoDTO.builder()
+                        .totalConfirmado(0.0)
+                        .totalPendiente(0.0)
+                        .totalCancelado(0.0)
+                        .totalGeneral(0.0)
+                        .cantidadTransacciones(0)
+                        .cantidadConfirmadas(0)
+                        .cantidadPendientes(0)
+                        .cantidadCanceladas(0)
+                        .build();
+            }
+
+            return com.gym.backend.Reportes.Application.DTO.ResumenIngresoDTO.builder()
+                    .totalConfirmado(result[0] != null ? ((Number) result[0]).doubleValue() : 0.0)
+                    .totalPendiente(result[1] != null ? ((Number) result[1]).doubleValue() : 0.0)
+                    .totalCancelado(result[2] != null ? ((Number) result[2]).doubleValue() : 0.0)
+                    .totalGeneral(result[3] != null ? ((Number) result[3]).doubleValue() : 0.0)
+                    .cantidadTransacciones(result[4] != null ? ((Number) result[4]).intValue() : 0)
+                    .cantidadConfirmadas(result[5] != null ? ((Number) result[5]).intValue() : 0)
+                    .cantidadPendientes(result[6] != null ? ((Number) result[6]).intValue() : 0)
+                    .cantidadCanceladas(result[7] != null ? ((Number) result[7]).intValue() : 0)
+                    .build();
+        } catch (jakarta.persistence.NoResultException e) {
+            return com.gym.backend.Reportes.Application.DTO.ResumenIngresoDTO.builder().build();
+        }
     }
 }

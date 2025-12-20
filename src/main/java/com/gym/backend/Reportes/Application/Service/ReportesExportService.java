@@ -49,58 +49,109 @@ public class ReportesExportService {
             PdfWriter.getInstance(document, baos);
             document.open();
 
+            // Colores corporativos (Negro/Gris Oscuro y Amarillo Dorado)
+            java.awt.Color goldColor = new java.awt.Color(255, 193, 7); // Un dorado más vibrante
+            java.awt.Color darkHeader = new java.awt.Color(33, 37, 41); // Gris oscuro casi negro
+
             // Título
             com.lowagie.text.Font titleFont = new com.lowagie.text.Font(
-                    com.lowagie.text.Font.HELVETICA, 18, com.lowagie.text.Font.BOLD, new java.awt.Color(255, 215, 0));
+                    com.lowagie.text.Font.HELVETICA, 20, com.lowagie.text.Font.BOLD, darkHeader);
             Paragraph title = new Paragraph("Reporte Detallado de Ingresos", titleFont);
             title.setAlignment(Element.ALIGN_CENTER);
+            title.setSpacingAfter(20);
             document.add(title);
-            document.add(Chunk.NEWLINE);
 
-            // Resumen
-            com.lowagie.text.Font subtitleFont = new com.lowagie.text.Font(
-                    com.lowagie.text.Font.HELVETICA, 12, com.lowagie.text.Font.BOLD);
-            document.add(new Paragraph("Resumen", subtitleFont));
+            // Subtítulo con fechas si existen
+            if (filtro.getFechaInicio() != null && filtro.getFechaFin() != null) {
+                com.lowagie.text.Font dateFont = new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 10,
+                        com.lowagie.text.Font.NORMAL, java.awt.Color.GRAY);
+                String rango = "Desde: " + filtro.getFechaInicio().format(DATE_FORMATTER) +
+                        "   Hasta: " + filtro.getFechaFin().format(DATE_FORMATTER);
+                Paragraph rangoP = new Paragraph(rango, dateFont);
+                rangoP.setAlignment(Element.ALIGN_CENTER);
+                rangoP.setSpacingAfter(20);
+                document.add(rangoP);
+            }
 
+            // Resumen Cards (Tabla simulando cards)
             PdfPTable resumenTable = new PdfPTable(4);
             resumenTable.setWidthPercentage(100);
-            agregarCeldaHeader(resumenTable, "Total Confirmado");
-            agregarCeldaHeader(resumenTable, "Total Pendiente");
-            agregarCeldaHeader(resumenTable, "Total Cancelado");
-            agregarCeldaHeader(resumenTable, "Total General");
-            agregarCelda(resumenTable, "S/. " + String.format("%.2f", resumen.getTotalConfirmado()));
-            agregarCelda(resumenTable, "S/. " + String.format("%.2f", resumen.getTotalPendiente()));
-            agregarCelda(resumenTable, "S/. " + String.format("%.2f", resumen.getTotalCancelado()));
-            agregarCelda(resumenTable, "S/. " + String.format("%.2f", resumen.getTotalGeneral()));
+            resumenTable.setSpacingAfter(30);
+
+            // Estilos para headers de resumen
+            com.lowagie.text.Font resHeaderFont = new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 10,
+                    com.lowagie.text.Font.BOLD, java.awt.Color.WHITE);
+            // Estilos para valores de resumen
+            com.lowagie.text.Font resValueFont = new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 14,
+                    com.lowagie.text.Font.BOLD, darkHeader);
+
+            // Helper para celdas de resumen
+            agregarCeldaResumen(resumenTable, "Total Confirmado", resumen.getTotalConfirmado(),
+                    new java.awt.Color(40, 167, 69), resHeaderFont, resValueFont); // Verde
+            agregarCeldaResumen(resumenTable, "Total Pendiente", resumen.getTotalPendiente(),
+                    new java.awt.Color(255, 193, 7), resHeaderFont, resValueFont); // Amarillo
+            agregarCeldaResumen(resumenTable, "Total Cancelado", resumen.getTotalCancelado(),
+                    new java.awt.Color(220, 53, 69), resHeaderFont, resValueFont); // Rojo
+            agregarCeldaResumen(resumenTable, "Total Generado", resumen.getTotalGeneral(), darkHeader, resHeaderFont,
+                    resValueFont); // Oscuro
+
             document.add(resumenTable);
-            document.add(Chunk.NEWLINE);
 
             // Tabla de detalles
-            document.add(new Paragraph("Detalle de Transacciones", subtitleFont));
+            com.lowagie.text.Font tableHeaderFont = new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 10,
+                    com.lowagie.text.Font.BOLD, java.awt.Color.BLACK);
+
             PdfPTable table = new PdfPTable(8);
             table.setWidthPercentage(100);
-            table.setWidths(new float[] { 2, 2, 3, 2.5f, 1.5f, 1.5f, 1.5f, 2 });
+            table.setWidths(new float[] { 2.5f, 2, 3.5f, 2.5f, 2, 2, 2, 2 });
+            table.setHeaderRows(1);
 
-            // Headers
-            agregarCeldaHeader(table, "Fecha");
-            agregarCeldaHeader(table, "DNI");
-            agregarCeldaHeader(table, "Usuario");
-            agregarCeldaHeader(table, "Plan");
-            agregarCeldaHeader(table, "Monto");
-            agregarCeldaHeader(table, "Método");
-            agregarCeldaHeader(table, "Estado");
-            agregarCeldaHeader(table, "Código");
+            // Headers con fondo amarillo dorado
+            String[] headers = { "Fecha", "DNI", "Usuario", "Plan", "Monto", "Método", "Estado", "Código" };
+            for (String h : headers) {
+                PdfPCell cell = new PdfPCell(new Phrase(h, tableHeaderFont));
+                cell.setBackgroundColor(goldColor);
+                cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+                cell.setPadding(8);
+                cell.setBorderColor(java.awt.Color.LIGHT_GRAY);
+                table.addCell(cell);
+            }
 
             // Datos
+            com.lowagie.text.Font rowFont = new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 9,
+                    com.lowagie.text.Font.NORMAL);
+            boolean alternate = false;
+            java.awt.Color lightGrayObj = new java.awt.Color(248, 249, 250);
+
             for (IngresoDetalladoDTO ingreso : ingresos) {
-                agregarCelda(table, ingreso.getFechaPago().format(DATE_FORMATTER));
-                agregarCelda(table, ingreso.getUsuarioDni());
-                agregarCelda(table, ingreso.getUsuarioNombre());
-                agregarCelda(table, ingreso.getPlanNombre());
-                agregarCelda(table, "S/. " + String.format("%.2f", ingreso.getMonto()));
-                agregarCelda(table, ingreso.getMetodoPago());
-                agregarCelda(table, ingreso.getEstado());
-                agregarCelda(table, ingreso.getCodigoPago());
+                alternate = !alternate;
+                java.awt.Color bg = alternate ? lightGrayObj : java.awt.Color.WHITE;
+
+                agregarCeldaTabla(table, ingreso.getFechaPago().format(DATE_FORMATTER), rowFont, bg);
+                agregarCeldaTabla(table, ingreso.getUsuarioDni(), rowFont, bg);
+                agregarCeldaTabla(table, ingreso.getUsuarioNombre(), rowFont, bg);
+                agregarCeldaTabla(table, ingreso.getPlanNombre(), rowFont, bg);
+                agregarCeldaTabla(table, "S/. " + String.format("%.2f", ingreso.getMonto()), rowFont, bg);
+                agregarCeldaTabla(table, ingreso.getMetodoPago(), rowFont, bg);
+
+                // Color para estado
+                com.lowagie.text.Font stateFont = new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 8,
+                        com.lowagie.text.Font.BOLD);
+                if ("CONFIRMADO".equals(ingreso.getEstado()))
+                    stateFont.setColor(new java.awt.Color(40, 167, 69));
+                else if ("PENDIENTE".equals(ingreso.getEstado()))
+                    stateFont.setColor(new java.awt.Color(255, 193, 7)); // Darker yellow for text
+                else
+                    stateFont.setColor(new java.awt.Color(220, 53, 69));
+
+                PdfPCell stateCell = new PdfPCell(new Phrase(ingreso.getEstado(), stateFont));
+                stateCell.setBackgroundColor(bg);
+                stateCell.setPadding(6);
+                stateCell.setBorderColor(java.awt.Color.LIGHT_GRAY);
+                table.addCell(stateCell);
+
+                agregarCeldaTabla(table, ingreso.getCodigoPago(), rowFont, bg);
             }
 
             document.add(table);
@@ -111,6 +162,44 @@ public class ReportesExportService {
             log.error("Error generando PDF de ingresos", e);
             throw new RuntimeException("Error generando PDF", e);
         }
+    }
+
+    private void agregarCeldaResumen(PdfPTable table, String titulo, Double valor, java.awt.Color bgColor,
+            com.lowagie.text.Font headerFont, com.lowagie.text.Font valueFont) {
+        PdfPCell cell = new PdfPCell();
+        cell.setBorder(0);
+        cell.setPadding(5);
+
+        PdfPTable inner = new PdfPTable(1);
+        inner.setWidthPercentage(100);
+
+        PdfPCell titleCell = new PdfPCell(new Phrase(titulo, headerFont));
+        titleCell.setBackgroundColor(bgColor);
+        titleCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        titleCell.setPadding(6);
+        titleCell.setBorderColor(bgColor);
+
+        PdfPCell valueCell = new PdfPCell(new Phrase("S/. " + String.format("%.2f", valor), valueFont));
+        valueCell.setBackgroundColor(new java.awt.Color(248, 249, 250)); // Gris muy claro
+        valueCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        valueCell.setPadding(10);
+        valueCell.setBorderColor(bgColor); // Borde del color del header
+        valueCell.setBorderWidth(1);
+
+        inner.addCell(titleCell);
+        inner.addCell(valueCell);
+
+        cell.addElement(inner);
+        table.addCell(cell);
+    }
+
+    private void agregarCeldaTabla(PdfPTable table, String text, com.lowagie.text.Font font, java.awt.Color bg) {
+        PdfPCell cell = new PdfPCell(new Phrase(text != null ? text : "", font));
+        cell.setBackgroundColor(bg);
+        cell.setPadding(6);
+        cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        cell.setBorderColor(java.awt.Color.LIGHT_GRAY);
+        table.addCell(cell);
     }
 
     public byte[] generarIngresosExcel(FiltroIngresoDTO filtro) {
