@@ -74,7 +74,10 @@ public class AuthController {
                             ? usuario.getPersona().getGenero().name()
                             : "PREFIERO_NO_DECIR",
                     usuario.getActivo(),
+                    usuario.tieneEmailVerificado(),
                     usuario.getPersona() != null ? usuario.getPersona().getFotoPerfilUrl() : null,
+                    usuario.getPersona() != null ? usuario.getPersona().getTelefono() : null,
+                    usuario.getPersona() != null ? usuario.getPersona().getDireccion() : null,
                     expiracion,
                     LocalDateTime.now(),
                     false,
@@ -236,7 +239,10 @@ public class AuthController {
                                 ? usuario.getPersona().getGenero().name()
                                 : "PREFIERO_NO_DECIR",
                         usuario.getActivo(),
+                        usuario.tieneEmailVerificado(),
                         usuario.getPersona() != null ? usuario.getPersona().getFotoPerfilUrl() : null,
+                        usuario.getPersona() != null ? usuario.getPersona().getTelefono() : null,
+                        usuario.getPersona() != null ? usuario.getPersona().getDireccion() : null,
                         null,
                         LocalDateTime.now(),
                         false,
@@ -260,7 +266,10 @@ public class AuthController {
                             ? usuario.getPersona().getGenero().name()
                             : "PREFIERO_NO_DECIR",
                     usuario.getActivo(),
+                    usuario.tieneEmailVerificado(),
                     usuario.getPersona() != null ? usuario.getPersona().getFotoPerfilUrl() : null,
+                    usuario.getPersona() != null ? usuario.getPersona().getTelefono() : null,
+                    usuario.getPersona() != null ? usuario.getPersona().getDireccion() : null,
                     expiracion,
                     LocalDateTime.now(),
                     false,
